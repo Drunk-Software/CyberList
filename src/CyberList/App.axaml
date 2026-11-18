@@ -20,8 +20,8 @@
         <FluentTheme>
             <FluentTheme.Palettes>
                 <ColorPaletteResources x:Key="Dark"
-                                       Accent="#FF2B3D"
-                                       RegionColor="#0B0D10" />
+                                       Accent="#E3242F"
+                                       RegionColor="#17191C" />
             </FluentTheme.Palettes>
         </FluentTheme>
         <mi:MaterialIconStyles />

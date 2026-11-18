@@ -4,7 +4,18 @@ using Avalonia.Media;
 
 namespace CyberList.Controls;
 
-/// <summary>A Border-like container with two diagonally cut corners.</summary>
+/// <summary>Which corners of a <see cref="CutBorder"/> are cut diagonally. Combine with commas in XAML: "BottomLeft,BottomRight".</summary>
+[Flags]
+public enum CutCorners
+{
+    None = 0,
+    TopLeft = 1,
+    TopRight = 2,
+    BottomRight = 4,
+    BottomLeft = 8,
+}
+
+/// <summary>A Border-like container with diagonally cut (chamfered) corners.</summary>
 public class CutBorder : Decorator
 {
     // 1. Declare the properties (so they can be set in XAML, styled and bound)
@@ -20,11 +31,14 @@ public class CutBorder : Decorator
     public static readonly StyledProperty<double> CutSizeProperty =
         AvaloniaProperty.Register<CutBorder, double>(nameof(CutSize), 10);
 
+    public static readonly StyledProperty<CutCorners> CornersProperty =
+        AvaloniaProperty.Register<CutBorder, CutCorners>(nameof(Corners), CutCorners.TopLeft | CutCorners.BottomRight);
+
     // 2. Tell Avalonia: when any of these change, redraw
     static CutBorder()
     {
         AffectsRender<CutBorder>(BackgroundProperty, BorderBrushProperty,
-                                 StrokeThicknessProperty, CutSizeProperty);
+                                 StrokeThicknessProperty, CutSizeProperty, CornersProperty);
     }
 
     // 3. Normal C# wrappers around the styled properties
@@ -52,27 +66,43 @@ public class CutBorder : Decorator
         set => SetValue(CutSizeProperty, value);
     }
 
+    public CutCorners Corners
+    {
+        get => GetValue(CornersProperty);
+        set => SetValue(CornersProperty, value);
+    }
+
     // 4. The drawing
     public override void Render(DrawingContext context)
     {
-        var w = Bounds.Width;
-        var h = Bounds.Height;
-        var half = StrokeThickness / 2;
-        var cut = Math.Min(CutSize, Math.Min(w, h) / 2);
+        var pen = BorderBrush is null ? null : new Pen(BorderBrush, StrokeThickness);
+        var shape = Build(new Rect(Bounds.Size), StrokeThickness, CutSize, Corners);
+        context.DrawGeometry(Background, pen, shape);
+    }
+
+    /// <summary>
+    /// The outline of a rectangle with some corners chamfered, inset by half the stroke so the
+    /// stroke stays inside the bounds. Shared with <see cref="HudFrame"/>.
+    /// </summary>
+    public static StreamGeometry Build(Rect r, double stroke, double cutSize, CutCorners corners)
+    {
+        var half = stroke / 2;
+        var (l, t, rt, b) = (r.Left + half, r.Top + half, r.Right - half, r.Bottom - half);
+        var cut = Math.Max(0, Math.Min(cutSize, Math.Min(r.Width, r.Height) / 2));
+        double C(CutCorners c) => corners.HasFlag(c) ? cut : 0;
 
         var shape = new StreamGeometry();
-        using (var g = shape.Open())
-        {
-            g.BeginFigure(new Point(half + cut, half), isFilled: true); // top edge, after the cut
-            g.LineTo(new Point(w - half, half));                        // top-right corner
-            g.LineTo(new Point(w - half, h - half - cut));              // down to the bottom-right cut
-            g.LineTo(new Point(w - half - cut, h - half));              // diagonal
-            g.LineTo(new Point(half, h - half));                        // bottom-left corner
-            g.LineTo(new Point(half, half + cut));                      // up to the top-left cut
-            g.EndFigure(isClosed: true);                                // diagonal back to start
-        }
-
-        var pen = BorderBrush is null ? null : new Pen(BorderBrush, StrokeThickness);
-        context.DrawGeometry(Background, pen, shape);
+        using var g = shape.Open();
+        // Clockwise from the top-left corner. A corner with cut 0 just puts two points on top of each other.
+        g.BeginFigure(new Point(l + C(CutCorners.TopLeft), t), isFilled: true);
+        g.LineTo(new Point(rt - C(CutCorners.TopRight), t));
+        g.LineTo(new Point(rt, t + C(CutCorners.TopRight)));
+        g.LineTo(new Point(rt, b - C(CutCorners.BottomRight)));
+        g.LineTo(new Point(rt - C(CutCorners.BottomRight), b));
+        g.LineTo(new Point(l + C(CutCorners.BottomLeft), b));
+        g.LineTo(new Point(l, b - C(CutCorners.BottomLeft)));
+        g.LineTo(new Point(l, t + C(CutCorners.TopLeft)));
+        g.EndFigure(isClosed: true);
+        return shape;
     }
 }

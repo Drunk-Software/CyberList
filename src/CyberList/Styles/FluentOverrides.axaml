@@ -5,17 +5,29 @@
     <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
 
-    <!-- TextBox: dark field, thin grey frame, red when focused -->
+    <!-- TextBox: near-black field, thin grey frame, red when focused -->
     <StaticResource x:Key="TextControlBackground"             ResourceKey="HudBackgroundBrush" />
     <StaticResource x:Key="TextControlBackgroundPointerOver"  ResourceKey="HudBackgroundBrush" />
     <StaticResource x:Key="TextControlBackgroundFocused"      ResourceKey="HudBackgroundBrush" />
     <StaticResource x:Key="TextControlBorderBrush"            ResourceKey="HudLineBrush" />
-    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="HudTextDimBrush" />
+    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="HudLineBrightBrush" />
     <StaticResource x:Key="TextControlBorderBrushFocused"     ResourceKey="HudAccentBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForeground"  ResourceKey="HudTextDimBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForegroundPointerOver" ResourceKey="HudTextDimBrush" />
+    <StaticResource x:Key="TextControlPlaceholderForegroundFocused"     ResourceKey="HudTextDimBrush" />
     <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
 
-    <!-- Tree rows: faint hover, red-tinted selection -->
-    <SolidColorBrush x:Key="TreeViewItemBackgroundPointerOver"         Color="#0FFFFFFF" />
-    <SolidColorBrush x:Key="TreeViewItemBackgroundSelected"            Color="#26FF2B3D" />
-    <SolidColorBrush x:Key="TreeViewItemBackgroundSelectedPointerOver" Color="#33FF2B3D" />
+    <!-- Tree rows: faint hover; the selected row becomes a solid light-grey band, like the
+         highlighted line in the reference table -->
+    <SolidColorBrush x:Key="TreeViewItemBackgroundPointerOver"         Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="TreeViewItemBackgroundSelected"            Color="#3A3F46" />
+    <SolidColorBrush x:Key="TreeViewItemBackgroundSelectedPointerOver" Color="#444A51" />
+    <SolidColorBrush x:Key="TreeViewItemBackgroundPressed"             Color="#444A51" />
+
+    <!-- We draw the tree's indentation and connector lines ourselves (TreeGuides), so turn
+         off Fluent's own indent and make rows exactly as tall as our content: any extra
+         height or border would leave gaps in the vertical lines between rows. -->
+    <x:Double x:Key="TreeViewItemIndent">0</x:Double>
+    <x:Double x:Key="TreeViewItemMinHeight">0</x:Double>
+    <Thickness x:Key="TreeViewItemBorderThemeThickness">0</Thickness>
 </ResourceDictionary>

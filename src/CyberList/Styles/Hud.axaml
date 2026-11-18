@@ -3,100 +3,231 @@
         xmlns:mi="using:Material.Icons.Avalonia"
         xmlns:ctl="using:CyberList.Controls">
 
-    <!-- A framed panel: the basic building block of the HUD -->
-    <Style Selector="ctl|CutBorder.panel">
-        <Setter Property="Background" Value="{StaticResource HudGlassPanelBrush}" />
+    <Styles.Resources>
+        <!-- A small square checkbox, drawn from scratch instead of fighting Fluent's template.
+             A ControlTheme replaces a control's whole look; the ^ in selectors means "this control". -->
+        <ControlTheme x:Key="HudCheckBox" TargetType="CheckBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource HudTextDimBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <!-- Transparent padding around the box makes it easier to hit -->
+                    <Border Background="Transparent" Padding="3">
+                        <Border Name="box" Width="15" Height="15"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1">
+                            <Panel>
+                                <Path Name="tick" IsVisible="False"
+                                      Data="M2,6.5 L5,9.5 L11,3.5"
+                                      Stroke="{TemplateBinding Foreground}" StrokeThickness="1.8" />
+                                <Rectangle Name="part" IsVisible="False" Width="5" Height="5"
+                                           Fill="{StaticResource HudWarnBrush}" />
+                            </Panel>
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+            <!-- Checked: solid steel box with a dark tick -->
+            <Style Selector="^:checked">
+                <Setter Property="Background" Value="{StaticResource HudSteelBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
+                <Style Selector="^ /template/ Path#tick">
+                    <Setter Property="IsVisible" Value="True" />
+                </Style>
+            </Style>
+            <!-- Some children done: an amber dot in the middle -->
+            <Style Selector="^:indeterminate">
+                <Setter Property="BorderBrush" Value="{StaticResource HudWarnBrush}" />
+                <Style Selector="^ /template/ Rectangle#part">
+                    <Setter Property="IsVisible" Value="True" />
+                </Style>
+            </Style>
+            <Style Selector="^:pointerover">
+                <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
+            </Style>
+        </ControlTheme>
+    </Styles.Resources>
+
+    <!-- ===== Frame & panels ===================================================== -->
+
+    <!-- The window itself: a flat charcoal slab, chamfered at the bottom, soft black shadow -->
+    <Style Selector="ctl|CutBorder.window-body">
+        <Setter Property="Background" Value="{StaticResource HudBodyBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource HudLineBrush}" />
         <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="Padding" Value="12" />
+        <Setter Property="CutSize" Value="16" />
+        <Setter Property="Corners" Value="BottomLeft,BottomRight" />
+        <Setter Property="Effect">
+            <DropShadowEffect BlurRadius="18" OffsetX="0" OffsetY="4" Color="Black" Opacity="0.7" />
+        </Setter>
     </Style>
 
-    <!-- Segmented progress bar: lit blocks in accent red, unlit in line grey -->
+    <!-- The thin outer bracket with ticks, tabs and markers -->
+    <Style Selector="ctl|HudFrame">
+        <Setter Property="LineBrush" Value="{StaticResource HudLineBrightBrush}" />
+        <Setter Property="TickBrush" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="MarkerBrush" Value="{StaticResource HudWarnBrush}" />
+        <Setter Property="AccentBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="CutSize" Value="22" />
+    </Style>
+
+    <!-- A framed panel: the basic building block of the HUD -->
+    <Style Selector="ctl|CutBorder.panel">
+        <!-- Slightly see-through (alpha C8) so the map dots and crosshairs show inside it too -->
+        <Setter Property="Background" Value="#C81C1F23" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudLineBrush}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="CutSize" Value="10" />
+        <Setter Property="Corners" Value="BottomLeft,BottomRight" />
+        <Setter Property="Padding" Value="10" />
+    </Style>
+
+    <!-- The flat red title bar -->
+    <Style Selector="ctl|CutBorder.header">
+        <Setter Property="Background" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="CutSize" Value="0" />
+        <Setter Property="Padding" Value="14,9" />
+    </Style>
+
+    <!-- The dark strip under the header: "DATE / 2026.11.19" -->
+    <Style Selector="Border.substrip">
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
+        <Setter Property="Padding" Value="14,4" />
+    </Style>
+
+    <!-- Map background: faint dots plus a "+" every 6 cells -->
+    <Style Selector="ctl|DotGrid">
+        <Setter Property="DotBrush" Value="#1CC8D0DA" />
+        <Setter Property="CrossBrush" Value="#40C8D0DA" />
+        <Setter Property="CrossEvery" Value="6" />
+        <Setter Property="Spacing" Value="20" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+
+    <!-- Tiny decoration blocks used around the layout -->
+    <Style Selector="Rectangle.amber">
+        <Setter Property="Fill" Value="{StaticResource HudWarnBrush}" />
+        <Setter Property="Width" Value="5" />
+        <Setter Property="Height" Value="5" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Rectangle.red">
+        <Setter Property="Fill" Value="{StaticResource HudAccentBrush}" />
+    </Style>
+
+    <!-- Status bar: a barcode — steel bars, dark gaps, a red "cursor" at the front -->
     <Style Selector="ctl|SegmentBar">
-        <Setter Property="OnBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="OnBrush" Value="{StaticResource HudSteelBrush}" />
         <Setter Property="OffBrush" Value="{StaticResource HudLineBrush}" />
-        <Setter Property="Height" Value="8" />
+        <Setter Property="HeadBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Segments" Value="56" />
+        <Setter Property="Gap" Value="2" />
+        <Setter Property="Height" Value="14" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
-    <!-- The red title bar -->
-    <Style Selector="ctl|CutBorder.header">
-        <Setter Property="Background" Value="{StaticResource HudHeaderBrush}" />
-        <Setter Property="Padding" Value="12,6" />
-        <!-- Neon glow around the bar -->
-        <Setter Property="Effect">
-            <DropShadowEffect BlurRadius="16" OffsetX="0" OffsetY="0"
-                              Color="{StaticResource HudAccent2Color}" Opacity="0.55" />
-        </Setter>
-    </Style>
+    <!-- ===== Text ================================================================ -->
 
-    <!-- The window itself: a big cut-corner slab of dark glass with a red glow around it.
-         It has no children, so the glow effect only has to render this one shape. -->
-    <Style Selector="ctl|CutBorder.window-body">
-        <Setter Property="Background" Value="{StaticResource HudBodyBrush}" />
-        <Setter Property="BorderBrush" Value="#99FF2B3D" />
-        <Setter Property="StrokeThickness" Value="1" />
-        <Setter Property="CutSize" Value="28" />
-        <Setter Property="Effect">
-            <DropShadowEffect BlurRadius="24" OffsetX="0" OffsetY="0"
-                              Color="{StaticResource HudAccentColor}" Opacity="0.5" />
-        </Setter>
-    </Style>
-
-    <!-- Soft color blobs behind the content -->
-    <Style Selector="Ellipse.smudge-warm">
-        <Setter Property="Fill" Value="{StaticResource HudSmudgeWarmBrush}" />
-    </Style>
-    <Style Selector="Ellipse.smudge-cool">
-        <Setter Property="Fill" Value="{StaticResource HudSmudgeCoolBrush}" />
-    </Style>
-
-    <!-- Blinking terminal cursor -->
-    <Style Selector="TextBlock.blink">
-        <Style.Animations>
-            <Animation Duration="0:0:1.1" IterationCount="Infinite">
-                <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-                <KeyFrame Cue="49%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-                <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0" /></KeyFrame>
-                <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0" /></KeyFrame>
-            </Animation>
-        </Style.Animations>
-    </Style>
-
-    <!-- Big heading text -->
+    <!-- Heading text on the red bar -->
     <Style Selector="TextBlock.h1">
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="19" />
         <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="LetterSpacing" Value="2" />
+        <Setter Property="LetterSpacing" Value="1.5" />
     </Style>
 
     <!-- Tiny monospace metadata: "SC 01", "03 / 12" -->
     <Style Selector="TextBlock.label">
         <Setter Property="FontFamily" Value="{StaticResource HudMono}" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="LetterSpacing" Value="1" />
         <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
     </Style>
+    <!-- A label value that should pop: white, or red for alerts -->
+    <Style Selector="TextBlock.label.bright">
+        <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
+    </Style>
+    <Style Selector="TextBlock.label.alert">
+        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+    </Style>
 
     <!-- Any text inside the red header is near-black, like the reference.
-    Must come AFTER TextBlock.label: with equal priority, the later style wins. -->
+         Must come AFTER TextBlock.label: with equal priority, the later style wins. -->
     <Style Selector="ctl|CutBorder.header TextBlock">
         <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
     </Style>
 
     <!-- Small label that sits on top of a panel's frame line, masking it -->
     <Style Selector="TextBlock.corner">
-        <Setter Property="Background" Value="{StaticResource HudBackgroundBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudBodyBrush}" />
         <Setter Property="Padding" Value="4,0" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
-        <Setter Property="Margin" Value="0,0,12,-7" />
+        <Setter Property="Margin" Value="0,0,18,-7" />
     </Style>
+
+    <!-- Empty-list hint -->
+    <Style Selector="TextBlock.empty">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="LetterSpacing" Value="2" />
+    </Style>
+
+    <!-- ===== New-entry field: no box, just text over a dotted underline ========== -->
+
+    <!-- Kill Fluent's box in every state. Fluent's own focus/hover rules live in the TextBox's
+         ControlTheme, and plain styles like this one beat theme styles, so this always wins. -->
+    <Style Selector="TextBox.line">
+        <Setter Property="Padding" Value="2,6" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="CaretBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="SelectionBrush" Value="#66E3242F" />
+        <Setter Property="LetterSpacing" Value="1" />
+    </Style>
+    <Style Selector="TextBox.line /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- The dots: dim grey at rest... -->
+    <Style Selector="ctl|DotLine">
+        <Setter Property="Brush" Value="{StaticResource HudLineBrightBrush}" />
+        <Setter Property="DotSize" Value="2" />
+        <Setter Property="Spacing" Value="5" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Brush" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <!-- ...steel when hovered... -->
+    <Style Selector="Grid.entry:pointerover ctl|DotLine">
+        <Setter Property="Brush" Value="{StaticResource HudTextDimBrush}" />
+    </Style>
+    <!-- ...red while typing. :focus-within = "this element or anything inside it has focus". -->
+    <Style Selector="Grid.entry:focus-within ctl|DotLine">
+        <Setter Property="Brush" Value="{StaticResource HudAccentBrush}" />
+    </Style>
+
+    <!-- The >_ prompt follows the same rhythm: dim at rest, red while typing -->
+    <Style Selector="Grid.entry TextBlock.prompt">
+        <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
+    </Style>
+    <Style Selector="Grid.entry:focus-within TextBlock.prompt">
+        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+    </Style>
+
+    <!-- ===== Buttons ============================================================= -->
+
     <!-- Flat icon button: no box, dim glyph, brightens on hover -->
     <Style Selector="Button.icon">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="Padding" Value="6,3" />
         <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
         <Setter Property="Transitions">
             <Transitions>
@@ -104,34 +235,39 @@
             </Transitions>
         </Setter>
     </Style>
-
+    <Style Selector="Button.icon mi|MaterialIcon">
+        <Setter Property="Width" Value="17" />
+        <Setter Property="Height" Value="17" />
+    </Style>
     <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
     </Style>
-
     <Style Selector="Button.icon:pressed /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
     </Style>
-
-    <!-- The delete button glows red on hover -->
+    <!-- Delete lights up red; edit amber; add-child bright steel -->
     <Style Selector="Button.icon.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
     </Style>
     <Style Selector="Button.icon.success:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Foreground" Value="{StaticResource HudSuccessBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudSteelBrush}" />
     </Style>
     <Style Selector="Button.icon.warn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Foreground" Value="{StaticResource HudWarnBrush}" />
     </Style>
-    <!-- Framed HUD button -->
+
+    <!-- Flat grey block button, like the "SPCT 01" buttons. Hover turns it red. -->
     <Style Selector="Button.hud">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudLineBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{StaticResource HudSteelBrush}" />
         <Setter Property="FontFamily" Value="{StaticResource HudMono}" />
-        <Setter Property="Padding" Value="14,4" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LetterSpacing" Value="1" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="Button.hud /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Transitions">
@@ -143,105 +279,207 @@
     </Style>
     <Style Selector="Button.hud:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
         <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
     </Style>
-
     <Style Selector="Button.hud:pressed /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#B3FF2B3D" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Background" Value="#B3E3242F" />
         <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
     </Style>
-
     <Style Selector="Button.hud:disabled /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudLineBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
         <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
     </Style>
-    <!-- Window caption buttons: dark glyphs on the red header -->
+
+    <!-- Window caption buttons: grey glyphs on the dark top strip -->
     <Style Selector="Button.caption">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="8,4" />
-        <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
+        <!-- Window buttons aren't Tab stops: Tab goes filters → new entry → tasks -->
+        <Setter Property="IsTabStop" Value="False" />
     </Style>
     <Style Selector="Button.caption mi|MaterialIcon">
-        <Setter Property="Width" Value="14" />
-        <Setter Property="Height" Value="14" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
     </Style>
-    <!-- Hover: invert to a dark block with a red glyph -->
     <Style Selector="Button.caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{StaticResource HudBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
     </Style>
     <Style Selector="Button.caption:pressed /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudLineBrush}" />
     </Style>
-    <!-- Close: white glyph on hover, the "danger" signal on a red bar. Must come after the hover rule. -->
+    <!-- Close: red block on hover. Must come after the hover rule. -->
     <Style Selector="Button.caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
+    </Style>
+
+    <!-- Filter tabs: small boxed "01 ALL" buttons. Selected = bright frame + white text + red underline. -->
+    <Style Selector="RadioButton.tab">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudLineBrightBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource HudMono}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="LetterSpacing" Value="1" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="RadioButton.tab:pressed">
+        <Setter Property="RenderTransform" Value="{x:Null}" />
+    </Style>
+    <Style Selector="RadioButton.tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
+    </Style>
+    <!-- After the hover style, so a selected tab keeps its look under the mouse -->
+    <Style Selector="RadioButton.tab:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
         <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
     </Style>
 
-    <!-- Invisible window resize grips (see MainWindow). Transparent = hit-testable. -->
-    <!-- Alpha 01 instead of fully Transparent: on a transparent window, fully transparent
-         pixels may let clicks fall through to the desktop. 1/255 is invisible but still "there". -->
+    <!-- ===== Shortcuts flyout =================================================== -->
+
+    <!-- The flyout's box: a flat panel with a thin frame and a red top edge -->
+    <Style Selector="FlyoutPresenter.hud">
+        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudLineBrightBrush}" />
+        <Setter Property="BorderThickness" Value="1,3,1,1" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="MaxWidth" Value="420" />
+    </Style>
+
+    <!-- Rows of [KEY]  description -->
+    <Style Selector="Grid.keys">
+        <Setter Property="RowSpacing" Value="6" />
+    </Style>
+    <Style Selector="Grid.keys > TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <!-- A key cap: small boxed mono label -->
+    <Style Selector="Border.key">
+        <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{StaticResource HudRaisedBrush}" />
+        <Setter Property="Padding" Value="8,1" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="MinWidth" Value="34" />
+    </Style>
+    <Style Selector="Border.key > TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource HudMono}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
+    </Style>
+
+    <!-- Invisible window resize grips (see MainWindow). Alpha 01 instead of fully Transparent:
+         on a transparent window, fully transparent pixels may let clicks fall through. -->
     <Style Selector="Border.grip">
         <Setter Property="Background" Value="#01000000" />
     </Style>
 
-    <!-- Row buttons style-->
+    <!-- ===== Tree: network-map style =========================================== -->
+
+    <!-- Hide Fluent's chevron: our own +/- node (inside TreeGuides) replaces it -->
+    <Style Selector="TreeViewItem /template/ Panel#PART_ExpandCollapseChevronContainer">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!-- Connector lines: thin mid-grey -->
+    <Style Selector="ctl|TreeGuides">
+        <Setter Property="Indent" Value="24" />
+        <Setter Property="LineBrush" Value="{StaticResource HudLineBrightBrush}" />
+        <Setter Property="NodeBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="DoneNodeBrush" Value="{StaticResource HudTextDimBrush}" />
+    </Style>
+
+    <!-- The +/- square node of a folder -->
+    <Style Selector="ToggleButton.node">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleButton.node mi|MaterialIcon">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+    </Style>
+    <!-- Fluent fills a checked ToggleButton with the accent; a node keeps its outline look -->
+    <Style Selector="ToggleButton.node:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudSteelBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudSteelBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.node:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
+    </Style>
+    <!-- Hover: the node "lights up" red. After :checked, so it wins. -->
+    <Style Selector="ToggleButton.node:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#33E3242F" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+    </Style>
+
+    <!-- Rows: compact, like the dense lines of the reference table -->
+    <Style Selector="Grid.row">
+        <Setter Property="MinHeight" Value="34" />
+    </Style>
+    <Style Selector="TreeViewItem">
+        <Setter Property="Padding" Value="0" />
+        <!-- No white keyboard-focus outline; we draw our own below -->
+        <Setter Property="FocusAdorner" Value="{x:Null}" />
+    </Style>
+    <!-- Keyboard focus (Tab / arrows, not mouse clicks): a red bar on the row's left edge.
+         An INSET shadow is drawn inside the border without taking layout space, so the
+         row's content (and its connector lines) doesn't shift by 2px. -->
+    <Style Selector="TreeViewItem:focus-visible /template/ Border#PART_LayoutRoot">
+        <Setter Property="BoxShadow" Value="inset 3 0 0 0 #E3242F" />
+    </Style>
+
+    <!-- The node, checkbox and row buttons are for the mouse. Not focusable means clicking them
+         leaves keyboard focus on the row (so Space/E/A/Del keep working), and Tab doesn't stop
+         on each one: the keyboard gets the shortcuts instead. -->
+    <Style Selector="Grid.row ToggleButton, Grid.row CheckBox, Grid.row Button">
+        <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <!-- Row titles -->
+    <Style Selector="TextBlock.title">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+    <!-- Folders: bolder, uppercase-feeling spacing -->
+    <Style Selector="TextBlock.title.folder">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="1" />
+    </Style>
+    <!-- Done tasks fade back and get struck through -->
+    <Style Selector="TextBlock.title.done">
+        <Setter Property="Foreground" Value="{StaticResource HudTextDimBrush}" />
+        <Setter Property="TextDecorations" Value="Strikethrough" />
+    </Style>
+
+    <!-- Row buttons: only visible on the hovered row -->
     <Style Selector="Grid.row Button.icon">
         <Setter Property="Opacity" Value="0" />
     </Style>
     <Style Selector="Grid.row:pointerover Button.icon">
         <Setter Property="Opacity" Value="1" />
-    </Style>
-    <!-- Outer frame -->
-    <Style Selector="ctl|CutBorder.segmented">
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="StrokeThickness" Value="1" />
-    </Style>
-
-    <!-- Each segment: a divider line on its LEFT edge... -->
-    <Style Selector="RadioButton.seg">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="BorderThickness" Value="1,0,0,0" />
-        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="FontFamily" Value="{StaticResource HudMono}" />
-        <Setter Property="Padding" Value="16,4" />
-        <Setter Property="MinWidth" Value="90" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-    </Style>
-
-    <!-- ...except the first one, which sits against the outer frame -->
-    <Style Selector="RadioButton.seg:nth-child(1)">
-        <Setter Property="BorderThickness" Value="0" />
-    </Style>
-
-    <!-- No "shrink when pressed" effect: segments are joined, so it looks broken -->
-    <Style Selector="RadioButton.seg:pressed">
-        <Setter Property="RenderTransform" Value="{x:Null}" />
-    </Style>
-
-    <!-- Hover: faint red wash -->
-    <Style Selector="RadioButton.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#1AFF2B3D" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
-    </Style>
-
-    <!-- Selected: filled. MUST come after the hover style (see below) -->
-    <Style Selector="RadioButton.seg:checked /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
-        <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
-    </Style>
-
-    <Style Selector="Button.icon mi|MaterialIcon">
-        <Setter Property="Width" Value="16" />
-        <Setter Property="Height" Value="16" />
     </Style>
 
 </Styles>

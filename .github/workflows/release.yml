@@ -1,0 +1,129 @@
+name: Release
+
+# Run by hand: Actions tab -> Release -> "Run workflow" (on master).
+# 1. works out the next version from the commits since the last release (GitVersion.yml)
+# 2. builds a self-contained app for every platform
+# 3. tags the commit vX.Y.Z and publishes a GitHub release with the builds attached
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the tag and the release
+
+# Never two releases at once: they'd both compute the same version.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: 10.0.x
+
+jobs:
+  version:
+    runs-on: self-hosted
+    outputs:
+      version: ${{ steps.gitversion.outputs.majorMinorPatch }}
+    steps:
+      - name: Only from master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "::error::Releases are made from master only (this run is on ${{ github.ref_name }})."
+          exit 1
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # GitVersion needs the full history and all tags
+
+      - uses: gittools/actions/gitversion/setup@v3
+        with:
+          versionSpec: 6.x
+
+      - id: gitversion
+        uses: gittools/actions/gitversion/execute@v3
+
+      - name: Refuse to release the same version twice
+        env:
+          VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::v$VERSION already exists - nothing new to release since then."
+            exit 1
+          fi
+          echo "### Releasing v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+
+      # Last safety net before shipping: the same build + tests as CI.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Test
+        run: dotnet test CyberList.slnx -c Release
+
+  build:
+    needs: version
+    runs-on: self-hosted   # .NET cross-publishes for every platform from Linux
+    strategy:
+      fail-fast: true
+      matrix:
+        rid: [win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64]
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      RID: ${{ matrix.rid }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # One self-contained file per platform: no .NET install needed to run it.
+      - name: Publish
+        run: >
+          dotnet publish src/CyberList/CyberList.csproj
+          -c Release -r "$RID" --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=none
+          -p:Version="$VERSION"
+          -o "publish/$RID"
+
+      # zip for Windows; tar.gz elsewhere, because it keeps the executable bit.
+      - name: Package
+        run: |
+          mkdir -p dist
+          # SkiaSharp ships ~100 MB of native debug symbols for Windows; users don't need them.
+          find "publish/$RID" -name '*.pdb' -delete
+          NAME="CyberList-$VERSION-$RID"
+          if [[ "$RID" == win-* ]]; then
+            (cd "publish/$RID" && zip -r -q "../../dist/$NAME.zip" .)
+          else
+            tar -czf "dist/$NAME.tar.gz" -C "publish/$RID" .
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.rid }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # Creates the tag on the exact commit that was built, then the release with notes
+      # generated from the merged PRs, and uploads every package.
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "v$VERSION" dist/*
+          --repo "${{ github.repository }}"
+          --target "${{ github.sha }}"
+          --title "CyberList v$VERSION"
+          --generate-notes

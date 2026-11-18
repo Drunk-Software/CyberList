@@ -3,4 +3,7 @@
     <Project Path="src/CyberList.Data/CyberList.Data.csproj" />
     <Project Path="src/CyberList/CyberList.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CyberList.Tests/CyberList.Tests.csproj" />
+  </Folder>
 </Solution>

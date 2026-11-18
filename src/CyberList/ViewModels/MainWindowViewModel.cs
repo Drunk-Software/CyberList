@@ -23,14 +23,37 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(AddCommand))]
     public partial string NewTitle { get; set; } = string.Empty;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(VisibleItems))]
     public partial ItemFilter Filter { get; set; } = ItemFilter.Active;
-    public IEnumerable<ListItemViewModel> VisibleItems => Filter switch
+
+    partial void OnFilterChanged(ItemFilter value) => UpdateVisibleItems();
+
+    /// <summary>Nothing to show under the current filter: the view shows a hint instead.</summary>
+    public bool IsEmpty => VisibleItems.Count == 0;
+
+    /// <summary>For the header's "DATE / 2026.11.19" strip.</summary>
+    public string Today => DateTime.Now.ToString("yyyy.MM.dd");
+    /// <summary>
+    /// The root rows the tree shows. A snapshot that is only replaced when the set of visible
+    /// roots actually changes: replacing it rebuilds every row, which would lose the selection
+    /// and keyboard focus (and the E / A / Del shortcuts with them) on every checkbox click.
+    /// </summary>
+    public IReadOnlyList<ListItemViewModel> VisibleItems { get; private set; } = [];
+
+    private void UpdateVisibleItems()
     {
-        ItemFilter.Active => RootItems.Where(i => !i.IsDone).ToList(),
-        ItemFilter.Done => RootItems.Where(i => i.IsDone).ToList(),
-        _ => RootItems.ToList()
-    };
+        var visible = Filter switch
+        {
+            ItemFilter.Active => RootItems.Where(i => !i.IsDone).ToList(),
+            ItemFilter.Done => RootItems.Where(i => i.IsDone).ToList(),
+            _ => RootItems.ToList()
+        };
+        if (visible.SequenceEqual(VisibleItems))
+            return;
+
+        VisibleItems = visible;
+        OnPropertyChanged(nameof(VisibleItems));
+        OnPropertyChanged(nameof(IsEmpty));
+    }
     /// <summary>Every leaf in the whole tree. Leaves are the actual tasks; parents are folders.</summary>
     private IEnumerable<ListItemViewModel> Leaves =>
         RootItems
@@ -149,7 +172,7 @@ public partial class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(Summary));
             OnPropertyChanged(nameof(Progress));
             OnPropertyChanged(nameof(LeafCount));
-            OnPropertyChanged(nameof(VisibleItems));
+            UpdateVisibleItems();
         });
     }
 }

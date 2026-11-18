@@ -1,0 +1,52 @@
+name: CI
+
+# Every PR (and every push to master) must build and pass the tests.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+# A newer push to the same PR cancels the run that's still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore CyberList.slnx
+
+      - name: Build
+        run: dotnet build CyberList.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test CyberList.slnx -c Release --no-build --logger "console;verbosity=normal"
+
+  # The PR title becomes the squash-merge commit message, and that's what decides the next
+  # version (see GitVersion.yml). So make sure it starts with feat:, !feat: or patch:.
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}   # via env, never inlined: titles are user input
+        run: |
+          if [[ "$TITLE" =~ ^(feat|\!feat|feat\!|patch)(\([a-z0-9._-]+\))?:\ .+ ]]; then
+            echo "OK: $TITLE"
+          else
+            echo "::error::PR title must start with 'feat:', '!feat:' (breaking) or 'patch:' - got: $TITLE"
+            exit 1
+          fi

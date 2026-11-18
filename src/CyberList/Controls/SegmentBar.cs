@@ -26,10 +26,20 @@ public class SegmentBar : Control
     public static readonly StyledProperty<IBrush?> OffBrushProperty =
         AvaloniaProperty.Register<SegmentBar, IBrush?>(nameof(OffBrush));
 
+    /// <summary>Optional color for the last lit block, a "cursor" at the front of the bar.</summary>
+    public static readonly StyledProperty<IBrush?> HeadBrushProperty =
+        AvaloniaProperty.Register<SegmentBar, IBrush?>(nameof(HeadBrush));
+
     static SegmentBar()
     {
         AffectsRender<SegmentBar>(ValueProperty, SegmentsProperty, GapProperty,
-                                  OnBrushProperty, OffBrushProperty);
+                                  OnBrushProperty, OffBrushProperty, HeadBrushProperty);
+    }
+
+    public IBrush? HeadBrush
+    {
+        get => GetValue(HeadBrushProperty);
+        set => SetValue(HeadBrushProperty, value);
     }
 
     /// <summary>Fraction done, 0..1 (values outside are clamped).</summary>
@@ -76,7 +86,9 @@ public class SegmentBar : Control
 
         for (var i = 0; i < count; i++)
         {
-            var brush = i < lit ? OnBrush : OffBrush;
+            var brush = i == lit - 1 && HeadBrush is not null ? HeadBrush
+                      : i < lit ? OnBrush
+                      : OffBrush;
             if (brush is not null)
                 context.DrawRectangle(brush, null, new Rect(x, 0, segmentWidth, Bounds.Height));
             x += segmentWidth + Gap;

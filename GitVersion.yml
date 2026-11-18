@@ -1,0 +1,27 @@
+# How the next release number is worked out (read by the Release workflow).
+#
+# GitVersion starts from the latest vX.Y.Z tag and looks at every commit message since then
+# (for squash-merged PRs that's the PR title). The biggest bump found wins:
+#
+#   !feat: ... / feat!: ...  -> major   1.4.2 -> 2.0.0   (breaking change)
+#   feat: ...                -> minor   1.4.2 -> 1.5.0
+#   patch: ...  (or anything else)  -> patch   1.4.2 -> 1.4.3
+#
+# A scope is allowed too: "feat(tree): keyboard shortcuts".
+# No tags yet? The first release is next-version.
+
+workflow: GitHubFlow/v1
+next-version: 0.1.0
+tag-prefix: '[vV]?'
+commit-message-incrementing: Enabled
+
+major-version-bump-message: '^(!feat|feat(\([^)]*\))?!)'
+minor-version-bump-message: '^feat(\([^)]*\))?[:\s]'
+patch-version-bump-message: '^patch(\([^)]*\))?[:\s]'
+no-bump-message: '\+semver:\s?(none|skip)'
+
+branches:
+  main:
+    # Plain "1.2.3" on master/main: no pre-release label. Anything not feat/!feat is a patch.
+    label: ''
+    increment: Patch

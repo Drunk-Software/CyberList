@@ -1,10 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CyberList.Data.Entities;
+using System.Collections.ObjectModel;
 
 namespace CyberList.ViewModels;
 
-public partial class ListItemViewModel(ListItem entity) : ViewModelBase
+public partial class ListItemViewModel(ListItem entity, ListItemViewModel? parent) : ViewModelBase
 {
     public ListItem Entity { get; } = entity;
     [ObservableProperty]
@@ -15,9 +16,17 @@ public partial class ListItemViewModel(ListItem entity) : ViewModelBase
 
     [ObservableProperty]
     public partial bool IsEditing { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsExpanded { get; set; }
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SaveEditCommand))]
     public partial string EditTitle { get; set; } = entity.Title;
+    
+    public ListItemViewModel? Parent { get; } = parent;
+
+    public ObservableCollection<ListItemViewModel> Children { get; } = [];
 
     /// <summary>Raised when the user toggles the checkbox, so the parent can persist it.</summary>
     public event Action<ListItemViewModel>? DoneChanged;
@@ -42,7 +51,7 @@ public partial class ListItemViewModel(ListItem entity) : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanSaveEdit))]
     private void SaveEdit()
     {
-        if (Title != EditTitle)
+        if (Title == EditTitle)
             return;
         Title = EditTitle.Trim();
         IsEditing = false;

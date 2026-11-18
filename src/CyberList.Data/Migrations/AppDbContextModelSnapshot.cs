@@ -29,6 +29,9 @@ namespace CyberList.Data.Migrations
                     b.Property<bool>("IsDone")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -38,7 +41,24 @@ namespace CyberList.Data.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("ParentId");
+
                     b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("CyberList.Data.Entities.ListItem", b =>
+                {
+                    b.HasOne("CyberList.Data.Entities.ListItem", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("CyberList.Data.Entities.ListItem", b =>
+                {
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

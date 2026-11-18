@@ -45,10 +45,16 @@
             <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Active}" Content="Active" />
             <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Done}" Content="Done" />
         </StackPanel>
-        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding VisibleItems}">
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="vm:ListItemViewModel">
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+        <TreeView DockPanel.Dock="Top" ItemsSource="{Binding VisibleItems}">
+            <TreeView.Styles>
+                <!-- Connect each TreeViewItem's IsExpanded to its ViewModel -->
+                <Style Selector="TreeViewItem" x:DataType="vm:ListItemViewModel">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                </Style>
+            </TreeView.Styles>
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate x:DataType="vm:ListItemViewModel" ItemsSource="{Binding Children}">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                         <CheckBox Grid.Column="0" IsChecked="{Binding IsDone}" />
                         <TextBlock
                             Grid.Column="1"
@@ -59,13 +65,10 @@
                         <TextBox
                             Grid.Column="1"
                             Margin="8,0"
+                            KeyDown="EditBox_KeyDown"
                             VerticalAlignment="Center"
                             Text="{Binding EditTitle}"
                             IsVisible="{Binding IsEditing}" >
-                            <TextBox.KeyBindings>
-                                <KeyBinding Gesture="Enter"  Command="{Binding SaveEditCommand}" />
-                                <KeyBinding Gesture="Escape" Command="{Binding CancelEditCommand}" />
-                            </TextBox.KeyBindings>
                         </TextBox>
                         <Button
                             Grid.Column="2"
@@ -74,13 +77,18 @@
                             IsVisible="{Binding !IsEditing}" />
                         <Button
                             Grid.Column="3"
+                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).AddChildCommand}"
+                            CommandParameter="{Binding}"
+                            Content="+" />
+                        <Button
+                            Grid.Column="4"
                             Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
                             CommandParameter="{Binding}"
                             Content="✕" />
                     </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
 
         <Grid DockPanel.Dock="Bottom">
             <TextBlock

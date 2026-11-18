@@ -34,6 +34,12 @@ jobs:
         with:
           fetch-depth: 0   # GitVersion needs the full history and all tags
 
+      # GitVersion is installed as a dotnet tool, so .NET must be set up first.
+      # (GitHub's own runners have .NET preinstalled; a self-hosted runner doesn't.)
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
       - uses: gittools/actions/gitversion/setup@v3
         with:
           versionSpec: 6.x
@@ -52,9 +58,6 @@ jobs:
           echo "### Releasing v$VERSION" >> "$GITHUB_STEP_SUMMARY"
 
       # Last safety net before shipping: the same build + tests as CI.
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
       - name: Test
         run: dotnet test CyberList.slnx -c Release
 

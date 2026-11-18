@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Square everything (buttons, checkboxes, textboxes, tabs...) -->
+    <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+    <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+
+    <!-- TextBox: dark field, thin grey frame, red when focused -->
+    <StaticResource x:Key="TextControlBackground"             ResourceKey="HudBackgroundBrush" />
+    <StaticResource x:Key="TextControlBackgroundPointerOver"  ResourceKey="HudBackgroundBrush" />
+    <StaticResource x:Key="TextControlBackgroundFocused"      ResourceKey="HudBackgroundBrush" />
+    <StaticResource x:Key="TextControlBorderBrush"            ResourceKey="HudLineBrush" />
+    <StaticResource x:Key="TextControlBorderBrushPointerOver" ResourceKey="HudTextDimBrush" />
+    <StaticResource x:Key="TextControlBorderBrushFocused"     ResourceKey="HudAccentBrush" />
+    <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+
+    <!-- Tree rows: faint hover, red-tinted selection -->
+    <SolidColorBrush x:Key="TreeViewItemBackgroundPointerOver"         Color="#0FFFFFFF" />
+    <SolidColorBrush x:Key="TreeViewItemBackgroundSelected"            Color="#26FF2B3D" />
+    <SolidColorBrush x:Key="TreeViewItemBackgroundSelectedPointerOver" Color="#33FF2B3D" />
+</ResourceDictionary>

@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CyberList.Data;
 using CyberList.Data.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.ObjectModel;
 
 namespace CyberList.ViewModels;
 
@@ -23,14 +24,40 @@ public partial class MainWindowViewModel : ViewModelBase
     public partial string NewTitle { get; set; } = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(VisibleItems))]
-    public partial ItemFilter Filter { get; set; } = ItemFilter.All;
+    public partial ItemFilter Filter { get; set; } = ItemFilter.Active;
     public IEnumerable<ListItemViewModel> VisibleItems => Filter switch
     {
         ItemFilter.Active => RootItems.Where(i => !i.IsDone).ToList(),
         ItemFilter.Done => RootItems.Where(i => i.IsDone).ToList(),
         _ => RootItems.ToList()
     };
-    public string Summary => $"{RootItems.Count(i => i.IsDone)} of {RootItems.Count} items";
+    /// <summary>Every leaf in the whole tree. Leaves are the actual tasks; parents are folders.</summary>
+    private IEnumerable<ListItemViewModel> Leaves =>
+        RootItems
+            .SelectMany(root => root.Descendants().Prepend(root))
+            .Where(i => i.IsLeaf);
+
+    public string Summary
+    {
+        get
+        {
+            var leaves = Leaves.ToList();
+            return $"{leaves.Count(i => i.IsDone)} of {leaves.Count} items";
+        }
+    }
+
+    /// <summary>Fraction of leaves done, 0..1. Feeds the SegmentBar.</summary>
+    public double Progress
+    {
+        get
+        {
+            var leaves = Leaves.ToList();
+            return leaves.Count == 0 ? 0 : (double)leaves.Count(i => i.IsDone) / leaves.Count;
+        }
+    }
+
+    /// <summary>Number of tasks (leaves) in the whole tree. Feeds the ENT corner label.</summary>
+    public int LeafCount => Leaves.Count();
     private async Task LoadAsync()
     {
         await using var db = await _dbFactory.CreateDbContextAsync();
@@ -53,7 +80,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
     }
-
+    private bool _refreshQueued;
     private bool CanAdd() => !string.IsNullOrWhiteSpace(NewTitle);
 
     [RelayCommand(CanExecute = nameof(CanAdd))]
@@ -67,8 +94,6 @@ public partial class MainWindowViewModel : ViewModelBase
         RootItems.Add(Wrap(entity));
         NewTitle = string.Empty;
     }
-    [RelayCommand]
-    private void SetFilter(ItemFilter filter) => Filter = filter;
     [RelayCommand]
     private async Task DeleteAsync(ListItemViewModel item)
     {
@@ -84,12 +109,17 @@ public partial class MainWindowViewModel : ViewModelBase
         db.Items.Add(entity);
         await db.SaveChangesAsync();
         var vm = Wrap(entity, parent);
+        vm.BeginEditCommand.Execute(null);
         parent.Children.Add(vm);
+        parent.IsExpanded = true;
+
     }
 
     private ListItemViewModel Wrap(ListItem entity, ListItemViewModel? parent = null)
     {
         var vm = new ListItemViewModel(entity, parent);
+        // Adding/removing a child can change the leaf count without changing any IsDone.
+        vm.Children.CollectionChanged += (_, _) => RefreshProperties();
         vm.DoneChanged += async changed =>
         {
             RefreshProperties();
@@ -110,8 +140,17 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     private void RefreshProperties()
     {
-        OnPropertyChanged(nameof(Summary));
-        OnPropertyChanged(nameof(VisibleItems));
+        if (_refreshQueued)
+            return;
+        _refreshQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _refreshQueued = false;
+            OnPropertyChanged(nameof(Summary));
+            OnPropertyChanged(nameof(Progress));
+            OnPropertyChanged(nameof(LeafCount));
+            OnPropertyChanged(nameof(VisibleItems));
+        });
     }
 }
 public enum ItemFilter

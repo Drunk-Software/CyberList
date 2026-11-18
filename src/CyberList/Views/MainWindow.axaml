@@ -4,97 +4,209 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mi="using:Material.Icons.Avalonia"
+    xmlns:conv="using:CyberList.Converters"
     xmlns:vm="using:CyberList.ViewModels"
+    xmlns:ctl="using:CyberList.Controls"
     x:Name="Root"
     Title="CyberList"
-    Width="500"
-    Height="600"
-    d:DesignHeight="600"
-    d:DesignWidth="500"
+    Width="540"
+    Height="660"
+    d:DesignHeight="660"
+    d:DesignWidth="540"
     x:DataType="vm:MainWindowViewModel"
+    Background="Transparent"
+    TransparencyLevelHint="AcrylicBlur, Transparent"
+    Foreground="{StaticResource HudTextBrush}"
+    FontFamily="{StaticResource HudFont}"
+    WindowDecorations="BorderOnly"
+    ExtendClientAreaToDecorationsHint="True"
+    Padding="{Binding $self.OffScreenMargin}"
     mc:Ignorable="d">
 
-    <DockPanel Margin="16">
+    <Window.Resources>
+        <conv:EnumEqualsConverter x:Key="EnumEquals" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- When maximized, drop the glow margin so the body fills the screen -->
+        <Style Selector=":is(Window)[WindowState=Maximized] Grid.body-host">
+            <Setter Property="Margin" Value="0" />
+        </Style>
+    </Window.Styles>
+
+    <!-- Outer grid: the window is transparent; everything visible lives in body-host,
+         and invisible resize grips sit on top along the outer (transparent) edges -->
+    <Grid>
+    <!-- Inset by 20px so the glow around the body has room to show -->
+    <Grid Classes="body-host" Margin="20">
+    <!-- The window shape itself: cut corners, dark glass, red glow -->
+    <ctl:CutBorder Classes="window-body" />
+    <!-- Color smudges, kept on the two square corners and clipped to the body -->
+    <Grid ClipToBounds="True" IsHitTestVisible="False">
+        <Ellipse Classes="smudge-warm" Width="340" Height="340"
+                 HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-130,0,0,-130" />
+        <Ellipse Classes="smudge-cool" Width="260" Height="260"
+                 HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-100,-100,0" />
+    </Grid>
+    <Grid Margin="16"
+          RowDefinitions="Auto,Auto,*,Auto">
+        <!-- Row 0: header bar, doubling as the window's title bar (drag / double-click to maximize) -->
+        <ctl:CutBorder Grid.Row="0" Classes="header"
+                       WindowDecorationProperties.ElementRole="TitleBar">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Classes="h1 blink" Text="▌" />
+                    <TextBlock Classes="h1" Text="CYBERLIST // TASK GRID" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Classes="label" VerticalAlignment="Center" Text="SC 01" />
+                <!-- Caption buttons: our replacement for the OS minimize / maximize / close -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0,0,0">
+                    <Button Classes="caption" Click="OnMinimize"
+                            WindowDecorationProperties.ElementRole="MinimizeButton">
+                        <mi:MaterialIcon Kind="WindowMinimize" />
+                    </Button>
+                    <Button Classes="caption" Click="OnMaximize"
+                            WindowDecorationProperties.ElementRole="MaximizeButton">
+                        <mi:MaterialIcon x:Name="MaximizeIcon" Kind="WindowMaximize" />
+                    </Button>
+                    <Button Classes="caption close" Click="OnClose"
+                            WindowDecorationProperties.ElementRole="CloseButton">
+                        <mi:MaterialIcon Kind="Close" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </ctl:CutBorder>
+        <!-- Row 1: filters -->
+        <ctl:CutBorder Grid.Row="1" Classes="segmented" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Classes="seg" GroupName="Filter" Content="ALL"
+                             IsChecked="{Binding Filter,
+                             Converter={StaticResource EnumEquals},
+                             ConverterParameter={x:Static vm:ItemFilter.All}}"
+                             Theme="{StaticResource {x:Type ToggleButton}}"/>
+                <RadioButton Classes="seg" GroupName="Filter" Content="ACTIVE"
+                             IsChecked="{Binding Filter,
+                             Converter={StaticResource EnumEquals},
+                             ConverterParameter={x:Static vm:ItemFilter.Active}}"
+                             Theme="{StaticResource {x:Type ToggleButton}}"/>
+                <RadioButton Classes="seg" GroupName="Filter" Content="DONE"
+                             IsChecked="{Binding Filter,
+                             Converter={StaticResource EnumEquals},
+                             ConverterParameter={x:Static vm:ItemFilter.Done}}"
+                             Theme="{StaticResource {x:Type ToggleButton}}"/>
+            </StackPanel>
+        </ctl:CutBorder>
+        <!-- Row 2: main list -->
+        <ctl:CutBorder Grid.Row="2"
+                Classes="panel"
+                Margin="10">
+
+            <DockPanel
+                Margin="0,0,0,12"
+                Grid.Row="2">
+                <!-- Add new item -->
+
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock
+                        Grid.Column="0"
+                        Classes="label"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Foreground="{StaticResource HudAccentBrush}"
+                        Text="&gt;_" />
+                    <TextBox
+                        Grid.Column="1"
+                        PlaceholderText="NEW ENTRY"
+                        Text="{Binding NewTitle}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Command="{Binding AddCommand}" Gesture="Enter" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button
+                        Grid.Column="2"
+                        Margin="8,0,0,0"
+                        Classes="hud"
+                        Command="{Binding AddCommand}"
+                        Content="{mi:MaterialIconTextExt Kind=Plus, Text=ADD}" />
+                </Grid>
+                <!-- The list itself -->
+                <TreeView  ItemsSource="{Binding VisibleItems}">
+                    <TreeView.Styles>
+                        <!-- Connect each TreeViewItem's IsExpanded to its ViewModel -->
+                        <Style Selector="TreeViewItem" x:DataType="vm:ListItemViewModel">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                        </Style>
+                    </TreeView.Styles>
+                    <TreeView.ItemTemplate>
+                        <TreeDataTemplate x:DataType="vm:ListItemViewModel" ItemsSource="{Binding Children}">
+                            <Grid Classes="row" Background="Transparent" ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                                <CheckBox Grid.Column="0" IsChecked="{Binding CheckState}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="8,0"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding Title}"
+                                    IsVisible="{Binding !IsEditing}"/>
+                                <TextBox
+                                    Grid.Column="1"
+                                    Margin="8,0"
+                                    KeyDown="EditBox_KeyDown"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding EditTitle}"
+                                    IsVisible="{Binding IsEditing}" >
+                                </TextBox>
+                                <Button
+                                    Grid.Column="3"
+                                    Classes="icon success"
+                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).AddChildCommand}"
+                                    CommandParameter="{Binding}">
+                                    <mi:MaterialIcon Kind="Plus" />
+                                </Button>
+                                <Button
+                                    Grid.Column="2"
+                                    Command="{Binding BeginEditCommand}"
+                                    Classes="icon warn"
+                                    IsVisible="{Binding !IsEditing}" >
+                                    <mi:MaterialIcon Kind="PencilOutline" />
+                                </Button>
+                                <Button
+                                    Grid.Column="4"
+                                    Classes="icon danger"
+                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
+                                    CommandParameter="{Binding}">
+                                    <mi:MaterialIcon Kind="TrashCan" />
+                                </Button>
+                            </Grid>
+                        </TreeDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </DockPanel>
+        </ctl:CutBorder>
+        <!-- Same cell as the panel: overlaps its bottom frame line -->
         <TextBlock
-            Margin="0,0,0,12"
-            DockPanel.Dock="Top"
-            FontSize="24"
-            FontWeight="SemiBold"
-            Text="CyberList" />
-
-        <Grid
-            Margin="0,0,0,12"
-            ColumnDefinitions="*,Auto"
-            DockPanel.Dock="Top">
-            <TextBox
-                Grid.Column="0"
-                PlaceholderText="What needs doing?"
-                Text="{Binding NewTitle}">
-                <TextBox.KeyBindings>
-                    <KeyBinding Command="{Binding AddCommand}" Gesture="Enter" />
-                </TextBox.KeyBindings>
-            </TextBox>
-            <Button
-                Grid.Column="1"
-                Margin="8,0,0,0"
-                Command="{Binding AddCommand}"
-                Content="Add" />
+            Grid.Row="2"
+            Classes="label corner"
+            Margin="10"
+            Text="{Binding LeafCount, StringFormat='ENT {0:00}'}" />
+        <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            <TextBlock Classes="label" VerticalAlignment="Center" Text="STATUS" />
+            <ctl:SegmentBar Grid.Column="1" Value="{Binding Progress}" />
+            <TextBlock Grid.Column="2" Classes="label" VerticalAlignment="Center" Text="{Binding Summary}" />
         </Grid>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8">
-            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.All}" Content="All" />
-            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Active}" Content="Active" />
-            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Done}" Content="Done" />
-        </StackPanel>
-        <TreeView DockPanel.Dock="Top" ItemsSource="{Binding VisibleItems}">
-            <TreeView.Styles>
-                <!-- Connect each TreeViewItem's IsExpanded to its ViewModel -->
-                <Style Selector="TreeViewItem" x:DataType="vm:ListItemViewModel">
-                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                </Style>
-            </TreeView.Styles>
-            <TreeView.ItemTemplate>
-                <TreeDataTemplate x:DataType="vm:ListItemViewModel" ItemsSource="{Binding Children}">
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-                        <CheckBox Grid.Column="0" IsChecked="{Binding IsDone}" />
-                        <TextBlock
-                            Grid.Column="1"
-                            Margin="8,0"
-                            VerticalAlignment="Center"
-                            Text="{Binding Title}" 
-                            IsVisible="{Binding !IsEditing}"/>
-                        <TextBox
-                            Grid.Column="1"
-                            Margin="8,0"
-                            KeyDown="EditBox_KeyDown"
-                            VerticalAlignment="Center"
-                            Text="{Binding EditTitle}"
-                            IsVisible="{Binding IsEditing}" >
-                        </TextBox>
-                        <Button
-                            Grid.Column="2"
-                            Command="{Binding BeginEditCommand}"
-                            Content="✎"
-                            IsVisible="{Binding !IsEditing}" />
-                        <Button
-                            Grid.Column="3"
-                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).AddChildCommand}"
-                            CommandParameter="{Binding}"
-                            Content="+" />
-                        <Button
-                            Grid.Column="4"
-                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
-                            CommandParameter="{Binding}"
-                            Content="✕" />
-                    </Grid>
-                </TreeDataTemplate>
-            </TreeView.ItemTemplate>
-        </TreeView>
+    </Grid>
+    </Grid>
 
-        <Grid DockPanel.Dock="Bottom">
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Text="{Binding Summary}" />
-        </Grid>
-    </DockPanel>
+    <!-- Resize grips in the transparent 20px glow margin. Nearly-transparent (not null) so they
+         receive the mouse; declared after the content so they sit on top. Corners last, so they
+         win where they overlap the edges. -->
+    <Border Classes="grip" Height="12" VerticalAlignment="Top"       WindowDecorationProperties.ElementRole="ResizeN" />
+    <Border Classes="grip" Height="12" VerticalAlignment="Bottom"    WindowDecorationProperties.ElementRole="ResizeS" />
+    <Border Classes="grip" Width="12"  HorizontalAlignment="Left"    WindowDecorationProperties.ElementRole="ResizeW" />
+    <Border Classes="grip" Width="12"  HorizontalAlignment="Right"   WindowDecorationProperties.ElementRole="ResizeE" />
+    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNW" />
+    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNE" />
+    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSW" />
+    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSE" />
+    </Grid>
 </Window>

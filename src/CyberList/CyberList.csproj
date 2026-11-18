@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -17,11 +17,18 @@
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Material.Icons.Avalonia" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CyberList.Data\CyberList.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Update="Styles\Palette.axaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AvaloniaXaml>
   </ItemGroup>
 
 </Project>

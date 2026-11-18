@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CyberList.Data/CyberList.Data.csproj" />
+    <Project Path="src/CyberList/CyberList.csproj" />
+  </Folder>
+</Solution>

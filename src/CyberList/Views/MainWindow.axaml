@@ -1,0 +1,92 @@
+<Window
+    x:Class="CyberList.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:CyberList.ViewModels"
+    x:Name="Root"
+    Title="CyberList"
+    Width="500"
+    Height="600"
+    d:DesignHeight="600"
+    d:DesignWidth="500"
+    x:DataType="vm:MainWindowViewModel"
+    mc:Ignorable="d">
+
+    <DockPanel Margin="16">
+        <TextBlock
+            Margin="0,0,0,12"
+            DockPanel.Dock="Top"
+            FontSize="24"
+            FontWeight="SemiBold"
+            Text="CyberList" />
+
+        <Grid
+            Margin="0,0,0,12"
+            ColumnDefinitions="*,Auto"
+            DockPanel.Dock="Top">
+            <TextBox
+                Grid.Column="0"
+                PlaceholderText="What needs doing?"
+                Text="{Binding NewTitle}">
+                <TextBox.KeyBindings>
+                    <KeyBinding Command="{Binding AddCommand}" Gesture="Enter" />
+                </TextBox.KeyBindings>
+            </TextBox>
+            <Button
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                Command="{Binding AddCommand}"
+                Content="Add" />
+        </Grid>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.All}" Content="All" />
+            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Active}" Content="Active" />
+            <Button Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:ItemFilter.Done}" Content="Done" />
+        </StackPanel>
+        <ListBox DockPanel.Dock="Top" ItemsSource="{Binding VisibleItems}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ListItemViewModel">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                        <CheckBox Grid.Column="0" IsChecked="{Binding IsDone}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Margin="8,0"
+                            VerticalAlignment="Center"
+                            Text="{Binding Title}" 
+                            IsVisible="{Binding !IsEditing}"/>
+                        <TextBox
+                            Grid.Column="1"
+                            Margin="8,0"
+                            VerticalAlignment="Center"
+                            Text="{Binding EditTitle}"
+                            IsVisible="{Binding IsEditing}" >
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter"  Command="{Binding SaveEditCommand}" />
+                                <KeyBinding Gesture="Escape" Command="{Binding CancelEditCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button
+                            Grid.Column="2"
+                            Command="{Binding BeginEditCommand}"
+                            Content="✎"
+                            IsVisible="{Binding !IsEditing}" />
+                        <Button
+                            Grid.Column="3"
+                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
+                            CommandParameter="{Binding}"
+                            Content="✕" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid DockPanel.Dock="Bottom">
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Text="{Binding Summary}" />
+        </Grid>
+    </DockPanel>
+</Window>

@@ -108,6 +108,10 @@ jobs:
   release:
     needs: [version, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       # create the tag and the release
+      id-token: write       # prove to GitHub's signing service which workflow is asking
+      attestations: write   # store the signed attestations on the repo
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
@@ -115,6 +119,19 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+
+      # One line per package: "<sha256>  <file name>". Users check it with `sha256sum -c`.
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum CyberList-* > SHA256SUMS
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+
+      # Signs a statement "these exact files were built by this workflow, from this commit".
+      # Anyone can check it with: gh attestation verify <file> --repo Drunk-Software/CyberList
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/CyberList-*
 
       # Creates the tag on the exact commit that was built, then the release with notes
       # generated from the merged PRs, and uploads every package.

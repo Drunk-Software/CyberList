@@ -55,6 +55,28 @@ PR titles (which become the squash-merge commit) decide the next version:
 | `feat:`              | minor | 1.4.2 → 1.5.0 |
 | `patch:`             | patch | 1.4.2 → 1.4.3 |
 
-CI checks the title on every PR. To release, run **Actions → Release → Run workflow** on `master`:
+CI checks the title on every PR. See [CONTRIBUTING.md](CONTRIBUTING.md). To release, run **Actions → Release → Run workflow** on `master`:
 it tags `vX.Y.Z`, builds self-contained apps for Windows, Linux and macOS (x64 + arm64), and
 attaches them to a GitHub release.
+
+## Verifying a download
+
+Each release includes a `SHA256SUMS` file and a GitHub build attestation for every package.
+
+```bash
+# The file is exactly what the release lists (run in the folder you downloaded to)
+sha256sum -c SHA256SUMS --ignore-missing
+
+# It was built by this repo's Release workflow, from a commit in this repo
+gh attestation verify CyberList-<version>-<platform>.zip --repo Drunk-Software/CyberList
+```
+
+On Windows without these tools: `Get-FileHash CyberList-<version>-win-x64.zip` and compare
+the hash with the matching line in `SHA256SUMS`.
+
+## License
+
+[PolyForm Noncommercial 1.0.0](LICENSE.txt). In short: you're free to use, fork, modify and
+share CyberList for any **non-commercial** purpose (personal use, learning, hobby projects,
+research, non-profits). Selling it, or using it to make money, needs permission from the author.
+This is *source-available*, not OSI "open source".

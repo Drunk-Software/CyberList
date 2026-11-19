@@ -1,4 +1,7 @@
 # CyberList
+All my life I've wanted a simple, good-looking nested checklist app. I tried building one more than once, and every time it grew too big or too confusing, so I never actually used it. This one is small and sticks to the basics. The plan is to keep it minimal and only add features that really matter, so it doesn't bloat and end up as another forgotten repo 😅
+
+Android support coming soon™ 😂
 
 Avalonia 12 + CommunityToolkit.Mvvm + EF Core 10 (SQLite), targeting .NET 10.
 

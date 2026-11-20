@@ -5,6 +5,7 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+	<ApplicationIcon>Assets\logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +30,12 @@
     <AvaloniaXaml Update="Styles\Palette.axaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AvaloniaXaml>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -22,6 +22,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - uses: actions/setup-dotnet@v5
+        if: runner.environment == 'github-hosted'   # self-hosted: uses the .NET SDK installed on the server
         with:
           dotnet-version: 10.0.x
 
@@ -44,7 +45,7 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}   # via env, never inlined: titles are user input
         run: |
-          if [[ "$TITLE" =~ ^(feat|\!feat|feat\!|patch)(\([a-z0-9._-]+\))?:\ .+ ]]; then
+          if [[ "$TITLE" =~ ^(feat|\!feat|feat\!|patch|chore)(\([a-z0-9._-]+\))?:\ .+ ]]; then
             echo "OK: $TITLE"
           else
             echo "::error::PR title must start with 'feat:', '!feat:' (breaking) or 'patch:' - got: $TITLE"

@@ -25,6 +25,7 @@
     WindowDecorations="BorderOnly"
     ExtendClientAreaToDecorationsHint="True"
     Padding="{Binding $self.OffScreenMargin}"
+    Icon="/Assets/logo.ico"
     mc:Ignorable="d">
 
     <Window.Resources>

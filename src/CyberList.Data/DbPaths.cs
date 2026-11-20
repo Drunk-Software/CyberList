@@ -7,11 +7,18 @@ public static class DbPaths
     {
         get
         {
+#if DEBUG
+            var folderName = "CyberList-Dev";
+            var dbName = "cyberlist-dev.db";
+#else
+            var folderName= "CyberList";
+            var dbName = "cyberlist.db";
+#endif
             var dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "CyberList");
+                folderName);
             Directory.CreateDirectory(dir);
-            return Path.Combine(dir, "cyberlist.db");
+            return Path.Combine(dir, dbName);
         }
     }
 

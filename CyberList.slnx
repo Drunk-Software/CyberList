@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/CyberList.Data/CyberList.Data.csproj" />
     <Project Path="src/CyberList/CyberList.csproj" />

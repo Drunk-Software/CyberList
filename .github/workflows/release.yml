@@ -34,6 +34,12 @@ jobs:
         with:
           fetch-depth: 0   # GitVersion needs the full history and all tags
 
+      # GitVersion is installed as a dotnet tool, so .NET must be set up first.
+      # (GitHub's own runners have .NET preinstalled; a self-hosted runner doesn't.)
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
       - uses: gittools/actions/gitversion/setup@v3
         with:
           versionSpec: 6.x
@@ -72,6 +78,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - uses: actions/setup-dotnet@v5
+        if: runner.environment == 'github-hosted'   # self-hosted: uses the .NET SDK installed on the server
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 

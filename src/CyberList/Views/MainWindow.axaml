@@ -40,265 +40,175 @@
     </Window.Styles>
 
     <!-- Outer grid: the window is transparent; everything visible lives in body-host,
-         and invisible resize grips sit on top along the outer (transparent) edges -->
+    and invisible resize grips sit on top along the outer (transparent) edges -->
     <Grid>
-    <!-- Inset by 20px: room for the shadow and the outer bracket -->
-    <Grid Classes="body-host" Margin="20">
-    <!-- Outer bracket, 7px outside the body (negative margin = grow past our cell) -->
-    <ctl:HudFrame Margin="-7" />
-    <!-- The window shape itself: flat charcoa  l, chamfered bottom corners -->
-    <ctl:CutBorder Classes="window-body" />
-    <!-- Map-style dots and crosshairs, skipping the chamfers (same CutSize/Corners as window-body) -->
-    <ctl:DotGrid CutSize="16" Corners="BottomLeft,BottomRight" />
+        <!-- Inset by 20px: room for the shadow and the outer bracket -->
+        <Grid Classes="body-host" Margin="20">
+            <!-- Outer bracket, 7px outside the body (negative margin = grow past our cell) -->
+            <ctl:HudFrame Margin="-7" />
+            <!-- The window shape itself: flat charcoa  l, chamfered bottom corners -->
+            <ctl:CutBorder Classes="window-body" />
+            <!-- Map-style dots and crosshairs, skipping the chamfers (same CutSize/Corners as window-body) -->
+            <ctl:DotGrid CutSize="16" Corners="BottomLeft,BottomRight" />
 
-    <Grid Margin="18,12,18,16" RowDefinitions="Auto,Auto,Auto,*,Auto">
+            <Grid Margin="18,12,18,16" RowDefinitions="Auto,Auto,Auto,Auto,*">
 
-        <!-- Row 0: top strip — filter tabs, a draggable gap, window buttons -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
-            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <RadioButton Classes="tab" GroupName="Filter" Content="01 ALL"
-                             Theme="{StaticResource {x:Type ToggleButton}}"
-                             IsChecked="{Binding Filter, Converter={StaticResource EnumEquals},
-                                         ConverterParameter={x:Static vm:ItemFilter.All}}" />
-                <RadioButton Classes="tab" GroupName="Filter" Content="02 ACTIVE"
-                             Theme="{StaticResource {x:Type ToggleButton}}"
-                             IsChecked="{Binding Filter, Converter={StaticResource EnumEquals},
-                                         ConverterParameter={x:Static vm:ItemFilter.Active}}" />
-                <RadioButton Classes="tab" GroupName="Filter" Content="03 DONE"
-                             Theme="{StaticResource {x:Type ToggleButton}}"
-                             IsChecked="{Binding Filter, Converter={StaticResource EnumEquals},
-                                         ConverterParameter={x:Static vm:ItemFilter.Done}}" />
-            </StackPanel>
-            <!-- The empty middle is the drag handle (Transparent, not null, so it gets the mouse) -->
-            <Panel Grid.Column="1" Background="Transparent"
-                   WindowDecorationProperties.ElementRole="TitleBar">
-                <StackPanel Orientation="Horizontal" Spacing="6"
-                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Classes="label" Text="SCENE" />
-                    <TextBlock Classes="label alert" Text="01" />
-                </StackPanel>
-            </Panel>
-            <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <!-- Shortcuts help: click, or press F1 anywhere -->
-                <Button x:Name="HelpButton" Classes="caption" ToolTip.Tip="Shortcuts (F1)">
-                    <mi:MaterialIcon Kind="KeyboardOutline" />
-                    <Button.Flyout>
-                        <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="hud">
-                            <StackPanel Spacing="10" Width="300">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Classes="label bright" Text="SHORTCUTS" />
-                                    <TextBlock Grid.Column="1" Classes="label" Text="F1" />
-                                </Grid>
-                                <Rectangle Height="1" Fill="{StaticResource HudLineBrush}" />
-
-                                <TextBlock Classes="label alert" Text="// SELECTED TASK" />
-                                <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-                                    <Border Grid.Row="0" Classes="key"><TextBlock Text="SPACE" /></Border>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Check / uncheck" />
-                                    <Border Grid.Row="1" Classes="key"><TextBlock Text="E" /></Border>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Edit title" />
-                                    <Border Grid.Row="2" Classes="key"><TextBlock Text="A" /></Border>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Add a sub-task" />
-                                    <Border Grid.Row="3" Classes="key"><TextBlock Text="DEL" /></Border>
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Delete (with its sub-tasks)" />
-                                    <Border Grid.Row="4" Classes="key"><TextBlock Text="↑ ↓" /></Border>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Move between tasks" />
-                                    <Border Grid.Row="5" Classes="key"><TextBlock Text="← →" /></Border>
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Collapse / expand" />
-                                </Grid>
-
-                                <TextBlock Classes="label alert" Text="// TEXT FIELDS" />
-                                <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto">
-                                    <Border Grid.Row="0" Classes="key"><TextBlock Text="ENTER" /></Border>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Add entry / save edit" />
-                                    <Border Grid.Row="1" Classes="key"><TextBlock Text="ESC" /></Border>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Cancel edit" />
-                                </Grid>
-
-                                <TextBlock Classes="label alert" Text="// GENERAL" />
-                                <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto">
-                                    <Border Grid.Row="0" Classes="key"><TextBlock Text="TAB" /></Border>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Filters → new entry → tasks" />
-                                </Grid>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button Classes="caption" Click="OnMinimize"
-                        WindowDecorationProperties.ElementRole="MinimizeButton">
-                    <mi:MaterialIcon Kind="WindowMinimize" />
-                </Button>
-                <Button Classes="caption" Click="OnMaximize"
-                        WindowDecorationProperties.ElementRole="MaximizeButton">
-                    <mi:MaterialIcon x:Name="MaximizeIcon" Kind="WindowMaximize" />
-                </Button>
-                <Button Classes="caption close" Click="OnClose"
-                        WindowDecorationProperties.ElementRole="CloseButton">
-                    <mi:MaterialIcon Kind="Close" />
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <!-- Row 1: the red header bar, also a drag handle (double-click maximizes) -->
-        <ctl:CutBorder Grid.Row="1" Classes="header"
-                       WindowDecorationProperties.ElementRole="TitleBar">
-            <Grid ColumnDefinitions="*,Auto,Auto">
-                <TextBlock Classes="h1" Text="CYBERLIST // TASK GRID" />
-                <TextBlock Grid.Column="1" Classes="label" VerticalAlignment="Center"
-                           Margin="0,0,10,0" Text="/CL" />
-                <Rectangle Grid.Column="2" Width="7" Height="7"
-                           Fill="{StaticResource HudBackgroundBrush}" VerticalAlignment="Center" />
-            </Grid>
-        </ctl:CutBorder>
-
-        <!-- Row 2: dark info strip under the header -->
-        <Border Grid.Row="2" Classes="substrip">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Classes="label" Text="{Binding Today, StringFormat='DATE / {0}'}" />
-                <TextBlock Grid.Column="1" Classes="label" Text="NODE / CYBERLIST.DB" />
-            </Grid>
-        </Border>
-
-        <!-- Row 3: main panel -->
-        <ctl:CutBorder Grid.Row="3" Classes="panel" Margin="0,10,0,12">
-            <DockPanel>
-                <!-- Add new item -->
-                <!-- Add new item: a borderless field over a dotted underline. "entry" lets the
-                     styles light the prompt and the dots up red while anything inside has focus. -->
-                <Grid DockPanel.Dock="Top" Classes="entry" ColumnDefinitions="Auto,*,Auto" Height="36">
-                    <TextBlock Grid.Column="0" Classes="label prompt" Margin="0,0,8,0"
-                               VerticalAlignment="Center" Text="&gt;_" />
-                    <Panel Grid.Column="1">
-                        <TextBox Classes="line" PlaceholderText="NEW ENTRY" Text="{Binding NewTitle}">
-                            <TextBox.KeyBindings>
-                                <KeyBinding Command="{Binding AddCommand}" Gesture="Enter" />
-                            </TextBox.KeyBindings>
-                        </TextBox>
-                        <ctl:DotLine VerticalAlignment="Bottom" />
+                <!-- Row 0: top strip — filter tabs, a draggable gap, window buttons -->
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                    <ItemsControl ItemsSource="{Binding PageTabs}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PageTab">
+                                <RadioButton Classes="tab" GroupName="PageTabs"
+                                             Theme="{StaticResource {x:Type ToggleButton}}"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <!-- The empty middle is the drag handle (Transparent, not null, so it gets the mouse) -->
+                    <Panel Grid.Column="1" Background="Transparent"
+                           WindowDecorationProperties.ElementRole="TitleBar">
+                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Classes="label" Text="SCENE" />
+                            <TextBlock Classes="label alert" Text="{Binding CurrentNavItem.Number, FallbackValue=00}" />
+                        </StackPanel>
                     </Panel>
-                    <Button Grid.Column="2" Margin="6,0,0,0" Classes="hud"
-                            Command="{Binding AddCommand}"
-                            Content="{mi:MaterialIconTextExt Kind=Plus, Text=ADD}" />
-                </Grid>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <!-- Shortcuts help: click, or press F1 anywhere -->
+                        <Button x:Name="HelpButton" Classes="caption" ToolTip.Tip="Shortcuts (F1)">
+                            <mi:MaterialIcon Kind="KeyboardOutline" />
+                            <Button.Flyout>
+                                <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="hud">
+                                    <StackPanel Spacing="10" Width="300">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Classes="label bright" Text="SHORTCUTS" />
+                                            <TextBlock Grid.Column="1" Classes="label" Text="F1" />
+                                        </Grid>
+                                        <Rectangle Height="1" Fill="{StaticResource HudLineBrush}" />
 
-                <!-- Section line: "TASKS ———————— ▪▪" -->
-                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,10,0,6">
-                    <TextBlock Classes="label" Text="TASKS" />
-                    <Rectangle Grid.Column="1" Height="1" Margin="8,0" VerticalAlignment="Center"
-                               Fill="{StaticResource HudLineBrush}" />
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
-                        <Rectangle Classes="amber" />
-                        <Rectangle Classes="amber" />
+                                        <TextBlock Classes="label alert" Text="// SELECTED TASK" />
+                                        <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                            <Border Grid.Row="0" Classes="key"><TextBlock Text="SPACE" /></Border>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Check / uncheck" />
+                                            <Border Grid.Row="1" Classes="key"><TextBlock Text="E" /></Border>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Edit title" />
+                                            <Border Grid.Row="2" Classes="key"><TextBlock Text="A" /></Border>
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Add a sub-task" />
+                                            <Border Grid.Row="3" Classes="key"><TextBlock Text="DEL" /></Border>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="Delete (with its sub-tasks)" />
+                                            <Border Grid.Row="4" Classes="key"><TextBlock Text="↑ ↓" /></Border>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="Move between tasks" />
+                                            <Border Grid.Row="5" Classes="key"><TextBlock Text="← →" /></Border>
+                                            <TextBlock Grid.Row="5" Grid.Column="1" Text="Collapse / expand" />
+                                        </Grid>
+
+                                        <TextBlock Classes="label alert" Text="// TEXT FIELDS" />
+                                        <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto">
+                                            <Border Grid.Row="0" Classes="key"><TextBlock Text="ENTER" /></Border>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Add entry / save edit" />
+                                            <Border Grid.Row="1" Classes="key"><TextBlock Text="ESC" /></Border>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Cancel edit" />
+                                        </Grid>
+
+                                        <TextBlock Classes="label alert" Text="// GENERAL" />
+                                        <Grid Classes="keys" ColumnDefinitions="90,*" RowDefinitions="Auto">
+                                            <Border Grid.Row="0" Classes="key"><TextBlock Text="TAB" /></Border>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="Filters → new entry → tasks" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        <Button Classes="caption" Click="OnMinimize"
+                                WindowDecorationProperties.ElementRole="MinimizeButton">
+                            <mi:MaterialIcon Kind="WindowMinimize" />
+                        </Button>
+                        <Button Classes="caption" Click="OnMaximize"
+                                WindowDecorationProperties.ElementRole="MaximizeButton">
+                            <mi:MaterialIcon x:Name="MaximizeIcon" Kind="WindowMaximize" />
+                        </Button>
+                        <Button Classes="caption close" Click="OnClose"
+                                WindowDecorationProperties.ElementRole="CloseButton">
+                            <mi:MaterialIcon Kind="Close" />
+                        </Button>
                     </StackPanel>
                 </Grid>
 
-                <Panel>
-                    <!-- The list itself -->
-                    <!-- Keyboard: the whole tree is ONE Tab stop (arrows move inside it), and
-                         Space / E / A / Del act on the selected row (see code-behind). -->
-                    <TreeView x:Name="Tree" ItemsSource="{Binding VisibleItems}"
-                              KeyboardNavigation.TabNavigation="Once"
-                              GotFocus="Tree_GotFocus">
-                        <TreeView.Styles>
-                            <!-- Connect each TreeViewItem's IsExpanded to its ViewModel -->
-                            <Style Selector="TreeViewItem" x:DataType="vm:ListItemViewModel">
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                            </Style>
-                        </TreeView.Styles>
-                        <TreeView.ItemTemplate>
-                            <TreeDataTemplate x:DataType="vm:ListItemViewModel" ItemsSource="{Binding Children}">
-                                <Grid Classes="row" Background="Transparent" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
-                                    <!-- Connector lines + this row's node (+/- for folders, a dot for tasks) -->
-                                    <ctl:TreeGuides Grid.Column="0"
-                                                    Depth="{Binding Depth}"
-                                                    Lines="{Binding GuideLines}"
-                                                    IsLastChild="{Binding IsLastChild}"
-                                                    ShowDownLine="{Binding ShowDownLine}"
-                                                    IsLeaf="{Binding IsLeaf}"
-                                                    IsDone="{Binding IsDone}">
-                                        <ToggleButton Classes="node"
-                                                      IsChecked="{Binding IsExpanded}"
-                                                      IsVisible="{Binding !IsLeaf}">
-                                            <Panel>
-                                                <mi:MaterialIcon Kind="Plus" IsVisible="{Binding !IsExpanded}" />
-                                                <mi:MaterialIcon Kind="Minus" IsVisible="{Binding IsExpanded}" />
-                                            </Panel>
-                                        </ToggleButton>
-                                    </ctl:TreeGuides>
-                                    <CheckBox Grid.Column="1" Margin="2,0,0,0"
-                                              Theme="{StaticResource HudCheckBox}"
-                                              IsChecked="{Binding CheckState}" />
-                                    <!-- Title + "done/total" counter for folders -->
-                                    <StackPanel Grid.Column="2" Margin="8,0" Orientation="Horizontal" Spacing="8"
-                                                VerticalAlignment="Center"
-                                                IsVisible="{Binding !IsEditing}">
-                                        <TextBlock Classes="title"
-                                                   Classes.folder="{Binding !IsLeaf}"
-                                                   Classes.done="{Binding IsDone}"
-                                                   Text="{Binding Title}" />
-                                        <TextBlock Classes="label" VerticalAlignment="Center"
-                                                   Text="{Binding LeafSummary, StringFormat='[{0}]'}"
-                                                   IsVisible="{Binding !IsLeaf}" />
+                <!-- Row 1: the red header bar. The title is the navigation toggle; the empty
+                     space next to it stays a drag handle (double-click maximizes). The drag role
+                     sits on that spacer only, so it can't swallow the toggle's clicks. -->
+                <ctl:CutBorder Grid.Row="1" Classes="header">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                        <ToggleButton Classes="nav" IsChecked="{Binding IsNavOpen}"
+                                      ToolTip.Tip="Navigate">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="h1"
+                                           Text="{Binding CurrentNavItem.Title, StringFormat='CYBERLIST // {0}', FallbackValue='CYBERLIST'}" />
+                                <mi:MaterialIcon Kind="ChevronDown" />
+                            </StackPanel>
+                        </ToggleButton>
+                        <Panel Grid.Column="1" Background="Transparent"
+                               WindowDecorationProperties.ElementRole="TitleBar" />
+                        <TextBlock Grid.Column="2" Classes="label" VerticalAlignment="Center"
+                                   Margin="0,0,10,0" Text="/CL" />
+                        <Rectangle Grid.Column="3" Width="7" Height="7"
+                                   Fill="{StaticResource HudBackgroundBrush}" VerticalAlignment="Center" />
+                    </Grid>
+                </ctl:CutBorder>
+
+                <!-- Row 2: navigation panel, expands under the header while the title is toggled on.
+                     One Navigate command for every entry; the entry passes its page type. -->
+                <Border Grid.Row="2" Classes="navpanel" IsVisible="{Binding IsNavOpen}">
+                    <ItemsControl ItemsSource="{Binding NavItems}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Spacing="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:NavItem">
+                                <Button Classes="hud navitem"
+                                        Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).NavigateCommand}"
+                                        CommandParameter="{Binding PageType}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Classes="number" Text="{Binding Number}" />
+                                        <TextBlock Text="{Binding Title}" />
                                     </StackPanel>
-                                    <TextBox Grid.Column="2" Margin="8,0"
-                                             KeyDown="EditBox_KeyDown"
-                                             ctl:AutoFocus.WhenVisible="True"
-                                             VerticalAlignment="Center"
-                                             Text="{Binding EditTitle}"
-                                             IsVisible="{Binding IsEditing}" />
-                                    <Button Grid.Column="3"
-                                            Command="{Binding BeginEditCommand}"
-                                            Classes="icon warn"
-                                            IsVisible="{Binding !IsEditing}">
-                                        <mi:MaterialIcon Kind="PencilOutline" />
-                                    </Button>
-                                    <Button Grid.Column="4"
-                                            Classes="icon success"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).AddChildCommand}"
-                                            CommandParameter="{Binding}">
-                                        <mi:MaterialIcon Kind="Plus" />
-                                    </Button>
-                                    <Button Grid.Column="5"
-                                            Classes="icon danger"
-                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DeleteCommand}"
-                                            CommandParameter="{Binding}">
-                                        <mi:MaterialIcon Kind="TrashCan" />
-                                    </Button>
-                                </Grid>
-                            </TreeDataTemplate>
-                        </TreeView.ItemTemplate>
-                    </TreeView>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
 
-                    <!-- Shown instead of the list when the current filter matches nothing -->
-                    <TextBlock Classes="label empty" Text="NO ENTRIES // TYPE ABOVE TO ADD ONE"
-                               IsVisible="{Binding IsEmpty}" />
-                </Panel>
-            </DockPanel>
-        </ctl:CutBorder>
-        <!-- Same cell as the panel: overlaps its bottom frame line -->
-        <TextBlock Grid.Row="3" Classes="label corner" Margin="0,0,18,5"
-                   Text="{Binding LeafCount, StringFormat='ENT {0:00}'}" />
+                <!-- Row 3: dark info strip under the header -->
+                <Border Grid.Row="3" Classes="substrip">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="label" Text="{Binding Today, StringFormat='DATE / {0}'}" />
+                        <TextBlock Grid.Column="1" Classes="label" Text="{Binding DbName, StringFormat='NODE / {0}'}" />
+                    </Grid>
+                </Border>
 
-        <!-- Row 4: status bar — label, red marker, barcode progress, count -->
-        <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
-            <TextBlock Classes="label" VerticalAlignment="Center" Text="STATUS" />
-            <Rectangle Grid.Column="1" Classes="red" Width="10" Height="3" VerticalAlignment="Center" />
-            <ctl:SegmentBar Grid.Column="2" Value="{Binding Progress}" />
-            <TextBlock Grid.Column="3" Classes="label bright" VerticalAlignment="Center" Text="{Binding Summary}" />
+                <!-- Row 4: the current page. The ViewLocator (App.axaml) picks its view by name -->
+                <ContentControl Grid.Row="4" Content="{Binding CurrentPage}" />
+            </Grid>
         </Grid>
-    </Grid>
-    </Grid>
 
-    <!-- Resize grips in the transparent 20px outer margin. Nearly-transparent (not null) so they
-         receive the mouse; declared after the content so they sit on top. Corners last, so they
-         win where they overlap the edges. -->
-    <Border Classes="grip" Height="12" VerticalAlignment="Top"       WindowDecorationProperties.ElementRole="ResizeN" />
-    <Border Classes="grip" Height="12" VerticalAlignment="Bottom"    WindowDecorationProperties.ElementRole="ResizeS" />
-    <Border Classes="grip" Width="12"  HorizontalAlignment="Left"    WindowDecorationProperties.ElementRole="ResizeW" />
-    <Border Classes="grip" Width="12"  HorizontalAlignment="Right"   WindowDecorationProperties.ElementRole="ResizeE" />
-    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNW" />
-    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNE" />
-    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSW" />
-    <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSE" />
+        <!-- Resize grips in the transparent 20px outer margin. Nearly-transparent (not null) so they
+        receive the mouse; declared after the content so they sit on top. Corners last, so they
+        win where they overlap the edges. -->
+        <Border Classes="grip" Height="12" VerticalAlignment="Top"       WindowDecorationProperties.ElementRole="ResizeN" />
+        <Border Classes="grip" Height="12" VerticalAlignment="Bottom"    WindowDecorationProperties.ElementRole="ResizeS" />
+        <Border Classes="grip" Width="12"  HorizontalAlignment="Left"    WindowDecorationProperties.ElementRole="ResizeW" />
+        <Border Classes="grip" Width="12"  HorizontalAlignment="Right"   WindowDecorationProperties.ElementRole="ResizeE" />
+        <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNW" />
+        <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top"    WindowDecorationProperties.ElementRole="ResizeNE" />
+        <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Left"  VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSW" />
+        <Border Classes="grip" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" WindowDecorationProperties.ElementRole="ResizeSE" />
     </Grid>
 </Window>

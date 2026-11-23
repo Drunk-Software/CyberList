@@ -9,10 +9,10 @@ Avalonia 12 + CommunityToolkit.Mvvm + EF Core 10 (SQLite), targeting .NET 10.
 
 ```
 src/
-  CyberList/          Avalonia desktop app (Views, ViewModels, DI in App.axaml.cs)
+  CyberList/          Avalonia desktop app (Views, ViewModels, Services, DI in App.axaml.cs)
   CyberList.Data/     EF Core: AppDbContext, entities, migrations
 tests/
-  CyberList.Tests/    xUnit: ViewModel logic, converter, migrations
+  CyberList.Tests/    xUnit: ViewModel logic, navigation, converter, migrations
 .github/workflows/
   ci.yml              build + test on every PR
   release.yml         manual release: version, build all platforms, publish
@@ -21,7 +21,26 @@ GitVersion.yml             how release versions are calculated
 dotnet-tools.json          local dotnet-ef tool
 ```
 
-The database lives at `%LOCALAPPDATA%\CyberList\cyberlist.db`. Pending migrations are applied automatically at startup.
+The database lives at `%LOCALAPPDATA%\CyberList\cyberlist.db` (Release builds). Debug builds use a
+separate `%LOCALAPPDATA%\CyberList-Dev\cyberlist-dev.db`, so running from the IDE never touches your
+real list. Pending migrations are applied automatically at startup.
+
+## Pages and navigation
+
+`MainWindow` is the shell (title bar, red header, date strip). The area under it shows one page at a
+time: `MainWindowViewModel.CurrentPage`, turned into its view by `ViewLocator`
+(`FooPageViewModel` → `FooPageView`). Click the header title to open the navigation panel.
+
+To add a page:
+
+1. `ViewModels/FooPageViewModel.cs` (derives from `ViewModelBase`)
+2. `Views/FooPageView.axaml` (a `UserControl`; the name must match the view model)
+3. One line in `App.ConfigureServices`: `services.AddPage<FooPageViewModel>("FOO");`
+
+Pages are singletons, so they keep their state between visits. From code, navigate with
+`INavigationService.NavigateTo<FooPageViewModel>()`; from XAML, with
+`NavigateCommand` and `CommandParameter="{x:Type vm:FooPageViewModel}"`. A page that implements
+`IHasTabs` gets its tabs shown in the top strip.
 
 ## Commands
 

@@ -1,0 +1,145 @@
+<UserControl
+    x:Class="CyberList.Views.ListPageView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mi="using:Material.Icons.Avalonia"
+    xmlns:vm="using:CyberList.ViewModels"
+    xmlns:ctl="using:CyberList.Controls"
+    x:Name="Page"
+    x:DataType="vm:ListPageViewModel"
+    d:DesignWidth="640"
+    d:DesignHeight="600"
+    mc:Ignorable="d">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- Row 0: main panel -->
+        <ctl:CutBorder Grid.Row="0" Classes="panel" Margin="0,10,0,12">
+            <DockPanel>
+                <!-- Add new item: a borderless field over a dotted underline. "entry" lets the
+                     styles light the prompt and the dots up red while anything inside has focus. -->
+                <Grid DockPanel.Dock="Top" Classes="entry" ColumnDefinitions="Auto,*,Auto" Height="36">
+                    <TextBlock Grid.Column="0" Classes="label prompt" Margin="0,0,8,0"
+                               VerticalAlignment="Center" Text="&gt;_" />
+                    <Panel Grid.Column="1">
+                        <TextBox Classes="line" PlaceholderText="NEW ENTRY" Text="{Binding NewTitle}">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Command="{Binding AddCommand}" Gesture="Enter" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <ctl:DotLine VerticalAlignment="Bottom" />
+                    </Panel>
+                    <Button Grid.Column="2" Margin="6,0,0,0" Classes="hud"
+                            Command="{Binding AddCommand}"
+                            Content="{mi:MaterialIconTextExt Kind=Plus, Text=ADD}" />
+                </Grid>
+
+                <!-- Section line: "TASKS ———————— ▪▪" -->
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,10,0,6">
+                    <TextBlock Classes="label" Text="TASKS" />
+                    <Rectangle Grid.Column="1" Height="1" Margin="8,0" VerticalAlignment="Center"
+                               Fill="{StaticResource HudLineBrush}" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="3">
+                        <Rectangle Classes="amber" />
+                        <Rectangle Classes="amber" />
+                    </StackPanel>
+                </Grid>
+
+                <Panel>
+                    <!-- The list itself -->
+                    <!-- Keyboard: the whole tree is ONE Tab stop (arrows move inside it), and
+                         Space / E / A / Del act on the selected row (see code-behind). -->
+                    <TreeView x:Name="Tree" ItemsSource="{Binding VisibleItems}"
+                              KeyboardNavigation.TabNavigation="Once"
+                              GotFocus="Tree_GotFocus">
+                        <TreeView.Styles>
+                            <!-- Connect each TreeViewItem's IsExpanded to its ViewModel -->
+                            <Style Selector="TreeViewItem" x:DataType="vm:ListItemViewModel">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate x:DataType="vm:ListItemViewModel" ItemsSource="{Binding Children}">
+                                <Grid Classes="row" Background="Transparent" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+                                    <!-- Connector lines + this row's node (+/- for folders, a dot for tasks) -->
+                                    <ctl:TreeGuides Grid.Column="0"
+                                                    Depth="{Binding Depth}"
+                                                    Lines="{Binding GuideLines}"
+                                                    IsLastChild="{Binding IsLastChild}"
+                                                    ShowDownLine="{Binding ShowDownLine}"
+                                                    IsLeaf="{Binding IsLeaf}"
+                                                    IsDone="{Binding IsDone}">
+                                        <ToggleButton Classes="node"
+                                                      IsChecked="{Binding IsExpanded}"
+                                                      IsVisible="{Binding !IsLeaf}">
+                                            <Panel>
+                                                <mi:MaterialIcon Kind="Plus" IsVisible="{Binding !IsExpanded}" />
+                                                <mi:MaterialIcon Kind="Minus" IsVisible="{Binding IsExpanded}" />
+                                            </Panel>
+                                        </ToggleButton>
+                                    </ctl:TreeGuides>
+                                    <CheckBox Grid.Column="1" Margin="2,0,0,0"
+                                              Theme="{StaticResource HudCheckBox}"
+                                              IsChecked="{Binding CheckState}" />
+                                    <!-- Title + "done/total" counter for folders -->
+                                    <StackPanel Grid.Column="2" Margin="8,0" Orientation="Horizontal" Spacing="8"
+                                                VerticalAlignment="Center"
+                                                IsVisible="{Binding !IsEditing}">
+                                        <TextBlock Classes="title"
+                                                   Classes.folder="{Binding !IsLeaf}"
+                                                   Classes.done="{Binding IsDone}"
+                                                   Text="{Binding Title}" />
+                                        <TextBlock Classes="label" VerticalAlignment="Center"
+                                                   Text="{Binding LeafSummary, StringFormat='[{0}]'}"
+                                                   IsVisible="{Binding !IsLeaf}" />
+                                    </StackPanel>
+                                    <TextBox Grid.Column="2" Margin="8,0"
+                                             KeyDown="EditBox_KeyDown"
+                                             ctl:AutoFocus.WhenVisible="True"
+                                             VerticalAlignment="Center"
+                                             Text="{Binding EditTitle}"
+                                             IsVisible="{Binding IsEditing}" />
+                                    <Button Grid.Column="3"
+                                            Command="{Binding BeginEditCommand}"
+                                            Classes="icon warn"
+                                            IsVisible="{Binding !IsEditing}">
+                                        <mi:MaterialIcon Kind="PencilOutline" />
+                                    </Button>
+                                    <Button Grid.Column="4"
+                                            Classes="icon success"
+                                            Command="{Binding #Page.((vm:ListPageViewModel)DataContext).AddChildCommand}"
+                                            CommandParameter="{Binding}">
+                                        <mi:MaterialIcon Kind="Plus" />
+                                    </Button>
+                                    <Button Grid.Column="5"
+                                            Classes="icon danger"
+                                            Command="{Binding #Page.((vm:ListPageViewModel)DataContext).DeleteCommand}"
+                                            CommandParameter="{Binding}">
+                                        <mi:MaterialIcon Kind="TrashCan" />
+                                    </Button>
+                                </Grid>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+
+                    <!-- Shown instead of the list when the current filter matches nothing -->
+                    <TextBlock Classes="label empty" Text="NO ENTRIES // TYPE ABOVE TO ADD ONE"
+                               IsVisible="{Binding IsEmpty}" />
+                </Panel>
+            </DockPanel>
+        </ctl:CutBorder>
+        <!-- Same cell as the panel: overlaps its bottom frame line -->
+        <TextBlock Grid.Row="0" Classes="label corner" Margin="0,0,18,5"
+                   Text="{Binding LeafCount, StringFormat='ENT {0:00}'}" />
+
+        <!-- Row 1: status bar — label, red marker, barcode progress, count -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
+            <TextBlock Classes="label" VerticalAlignment="Center" Text="STATUS" />
+            <Rectangle Grid.Column="1" Classes="red" Width="10" Height="3" VerticalAlignment="Center" />
+            <ctl:SegmentBar Grid.Column="2" Value="{Binding Progress}" />
+            <TextBlock Grid.Column="3" Classes="label bright" VerticalAlignment="Center" Text="{Binding Summary}" />
+        </Grid>
+    </Grid>
+</UserControl>

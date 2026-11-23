@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CyberList.Data;
+using CyberList.Interfaces;
+using CyberList.Services;
 using CyberList.ViewModels;
 using CyberList.Views;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +44,11 @@ public partial class App : Application
 
         services.AddDbContextFactory<AppDbContext>(o => o.UseSqlite(DbPaths.DefaultConnectionString));
 
-        services.AddTransient<MainWindowViewModel>();
+        // Pages: one line each. The order here is the order in the header's navigation panel.
+        services.AddPage<ListPageViewModel>("TASK GRID");
+        services.AddPage<SettingsPageViewModel>("SETTINGS");
+        services.AddSingleton<MainWindowViewModel>();
+        services.AddSingleton<INavigationService, NavigationService>();
 
         return services.BuildServiceProvider();
     }

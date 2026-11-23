@@ -2,6 +2,10 @@
   <Folder Name="/Solution Items/">
     <File Path=".github/workflows/ci.yml" />
     <File Path=".github/workflows/release.yml" />
+    <File Path="scripts/seed-test-data.sql" />
+  </Folder>
+  <Folder Name="/Solution Items/Scripts/">
+    <File Path="scripts/seed-test-data.sql" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/CyberList.Data/CyberList.Data.csproj" />

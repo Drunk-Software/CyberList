@@ -5,7 +5,7 @@ namespace CyberList.Tests;
 
 public class ListItemViewModelTests
 {
-    // Builds a node and attaches it to its parent, the same way MainWindowViewModel does.
+    // Builds a node and attaches it to its parent, the same way ListPageViewModel does.
     private static ListItemViewModel Node(string title, ListItemViewModel? parent = null, bool done = false)
     {
         var vm = new ListItemViewModel(new ListItem { Title = title, IsDone = done }, parent);

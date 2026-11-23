@@ -344,6 +344,73 @@
         <Setter Property="Foreground" Value="{StaticResource HudTextBrush}" />
     </Style>
 
+    <!-- ===== Header navigation ================================================== -->
+
+    <!-- The header title doubles as the navigation toggle: no button chrome, just the text and a
+         chevron that flips while the panel is open. Fluent's hover/checked/pressed backgrounds are
+         all cleared so the red bar stays flat. -->
+    <Style Selector="ToggleButton.nav">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="IsTabStop" Value="False" />
+    </Style>
+    <Style Selector="ToggleButton.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton.nav:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton.nav:pressed">
+        <Setter Property="RenderTransform" Value="{x:Null}" />
+    </Style>
+    <Style Selector="ToggleButton.nav mi|MaterialIcon">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
+        <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ToggleButton.nav:checked mi|MaterialIcon">
+        <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    </Style>
+    <!-- Hover: the dark title text fades a little, the only hint that it's clickable -->
+    <Style Selector="ToggleButton.nav:pointerover StackPanel">
+        <Setter Property="Opacity" Value="0.75" />
+    </Style>
+
+    <!-- The panel that expands under the header: dark, with a red left edge like a terminal gutter -->
+    <Style Selector="Border.navpanel">
+        <Setter Property="Background" Value="{StaticResource HudPanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource HudAccentBrush}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="Padding" Value="10,8" />
+    </Style>
+    <!-- Entries: full-width hud buttons, text on the left. The current page's entry is disabled
+         (Navigate's CanExecute), which the hud :disabled style already greys out. -->
+    <Style Selector="Button.navitem">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.navitem TextBlock.number">
+        <Setter Property="Foreground" Value="{StaticResource HudAccentBrush}" />
+    </Style>
+    <Style Selector="Button.navitem:pointerover TextBlock.number">
+        <Setter Property="Foreground" Value="{StaticResource HudBackgroundBrush}" />
+    </Style>
+
     <!-- ===== Shortcuts flyout =================================================== -->
 
     <!-- The flyout's box: a flat panel with a thin frame and a red top edge -->

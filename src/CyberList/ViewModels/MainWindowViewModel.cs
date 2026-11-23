@@ -1,184 +1,67 @@
-using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CyberList.Data;
-using CyberList.Data.Entities;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.ObjectModel;
+using CyberList.Interfaces;
+using CyberList.Services;
 
 namespace CyberList.ViewModels;
 
+/// <summary>
+/// The shell: owns what stays on screen whatever page is open (title bar, header, date strip)
+/// and the page currently shown in the content area.
+/// </summary>
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private readonly INavigationService _navigationService;
 
-    public MainWindowViewModel(IDbContextFactory<AppDbContext> dbFactory)
+    public MainWindowViewModel(INavigationService navigationService, IEnumerable<PageInfo> pages)
     {
-        _dbFactory = dbFactory;
-        RootItems.CollectionChanged += (_, _) => RefreshProperties();
-        _ = LoadAsync();
+        _navigationService = navigationService;
+
+        // Every page registered with AddPage, numbered in registration order: "01", "02"...
+        NavItems = pages
+            .Select((page, index) => new NavItem($"{index + 1:00}", page.Title, page.PageType))
+            .ToList();
+
+        _navigationService.CurrentPageChanged += (page) => CurrentPage = page;
+        _navigationService.NavigateTo<ListPageViewModel>();
     }
-    public ObservableCollection<ListItemViewModel> RootItems { get; } = [];
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(AddCommand))]
-    public partial string NewTitle { get; set; } = string.Empty;
-    [ObservableProperty]
-    public partial ItemFilter Filter { get; set; } = ItemFilter.Active;
 
-    partial void OnFilterChanged(ItemFilter value) => UpdateVisibleItems();
-
-    /// <summary>Nothing to show under the current filter: the view shows a hint instead.</summary>
-    public bool IsEmpty => VisibleItems.Count == 0;
+    /// <summary>The page in the content area. The ViewLocator turns it into its view.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PageTabs), nameof(CurrentNavItem))]
+    [NotifyCanExecuteChangedFor(nameof(NavigateCommand))]
+    public partial ViewModelBase? CurrentPage { get; set; }
 
     /// <summary>For the header's "DATE / 2026.11.19" strip.</summary>
     public string Today => DateTime.Now.ToString("yyyy.MM.dd");
+    public string DbName => Path.GetFileName(DbPaths.DefaultConnectionString).ToUpper();
+
+    public IReadOnlyList<PageTab> PageTabs => (CurrentPage as IHasTabs)?.Tabs ?? Array.Empty<PageTab>();
+
+    // --- Header navigation ----------------------------------------------------------------
+
+    /// <summary>The entries of the header's navigation panel.</summary>
+    public IReadOnlyList<NavItem> NavItems { get; }
+
+    /// <summary>The entry for the page shown now: its title goes in the header, its number in "SCENE 01".</summary>
+    public NavItem? CurrentNavItem => NavItems.FirstOrDefault(item => item.PageType == CurrentPage?.GetType());
+
+    /// <summary>Whether the navigation panel under the header is expanded.</summary>
+    [ObservableProperty]
+    public partial bool IsNavOpen { get; set; }
+
     /// <summary>
-    /// The root rows the tree shows. A snapshot that is only replaced when the set of visible
-    /// roots actually changes: replacing it rebuilds every row, which would lose the selection
-    /// and keyboard focus (and the E / A / Del shortcuts with them) on every checkbox click.
+    /// One command for every page: XAML passes the page type, e.g.
+    /// CommandParameter="{x:Type vm:SettingsPageViewModel}" (or a NavItem's PageType).
     /// </summary>
-    public IReadOnlyList<ListItemViewModel> VisibleItems { get; private set; } = [];
-
-    private void UpdateVisibleItems()
+    [RelayCommand(CanExecute = nameof(CanNavigate))]
+    private void Navigate(Type pageType)
     {
-        var visible = Filter switch
-        {
-            ItemFilter.Active => RootItems.Where(i => !i.IsDone).ToList(),
-            ItemFilter.Done => RootItems.Where(i => i.IsDone).ToList(),
-            _ => RootItems.ToList()
-        };
-        if (visible.SequenceEqual(VisibleItems))
-            return;
-
-        VisibleItems = visible;
-        OnPropertyChanged(nameof(VisibleItems));
-        OnPropertyChanged(nameof(IsEmpty));
-    }
-    /// <summary>Every leaf in the whole tree. Leaves are the actual tasks; parents are folders.</summary>
-    private IEnumerable<ListItemViewModel> Leaves =>
-        RootItems
-            .SelectMany(root => root.Descendants().Prepend(root))
-            .Where(i => i.IsLeaf);
-
-    public string Summary
-    {
-        get
-        {
-            var leaves = Leaves.ToList();
-            return $"{leaves.Count(i => i.IsDone)} of {leaves.Count} items";
-        }
+        _navigationService.NavigateTo(pageType);
+        IsNavOpen = false;
     }
 
-    /// <summary>Fraction of leaves done, 0..1. Feeds the SegmentBar.</summary>
-    public double Progress
-    {
-        get
-        {
-            var leaves = Leaves.ToList();
-            return leaves.Count == 0 ? 0 : (double)leaves.Count(i => i.IsDone) / leaves.Count;
-        }
-    }
-
-    /// <summary>Number of tasks (leaves) in the whole tree. Feeds the ENT corner label.</summary>
-    public int LeafCount => Leaves.Count();
-    private async Task LoadAsync()
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        var items = await db.Items.AsNoTracking().OrderBy(i => i.CreatedAt).ToListAsync();
-        RootItems.Clear();
-        var byParent = items.ToLookup(i => i.ParentId);
-        foreach (var root in byParent[null])
-        {
-            var vm = Wrap(root, null);
-            RootItems.Add(vm);
-            AddChildren(vm);
-        }
-        void AddChildren(ListItemViewModel parent)
-        {
-            foreach (var child in byParent[parent.Entity.Id])
-            {
-                var vm = Wrap(child, parent);
-                parent.Children.Add(vm);
-                AddChildren(vm);
-            }
-        }
-    }
-    private bool _refreshQueued;
-    private bool CanAdd() => !string.IsNullOrWhiteSpace(NewTitle);
-
-    [RelayCommand(CanExecute = nameof(CanAdd))]
-    private async Task AddAsync()
-    {
-        var entity = new ListItem { Title = NewTitle.Trim() };
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        db.Items.Add(entity);
-        await db.SaveChangesAsync();
-
-        RootItems.Add(Wrap(entity));
-        NewTitle = string.Empty;
-    }
-    [RelayCommand]
-    private async Task DeleteAsync(ListItemViewModel item)
-    {
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        await db.Items.Where(i => i.Id == item.Entity.Id).ExecuteDeleteAsync();
-        (item.Parent?.Children ?? RootItems).Remove(item);
-    }
-    [RelayCommand]
-    private async Task AddChild(ListItemViewModel parent)
-    {
-        var entity = new ListItem { Title = "New Item", ParentId = parent.Entity.Id };
-        await using var db = await _dbFactory.CreateDbContextAsync();
-        db.Items.Add(entity);
-        await db.SaveChangesAsync();
-        var vm = Wrap(entity, parent);
-        vm.BeginEditCommand.Execute(null);
-        parent.Children.Add(vm);
-        parent.IsExpanded = true;
-
-    }
-
-    private ListItemViewModel Wrap(ListItem entity, ListItemViewModel? parent = null)
-    {
-        var vm = new ListItemViewModel(entity, parent);
-        // Adding/removing a child can change the leaf count without changing any IsDone.
-        vm.Children.CollectionChanged += (_, _) => RefreshProperties();
-        vm.DoneChanged += async changed =>
-        {
-            RefreshProperties();
-            await using var db = await _dbFactory.CreateDbContextAsync();
-            await db.Items
-                .Where(i => i.Id == changed.Entity.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsDone, changed.IsDone));
-        };
-        vm.TitleChanged += async changed =>
-        {
-            RefreshProperties();
-            await using var db = await _dbFactory.CreateDbContextAsync();
-            await db.Items
-                .Where(i => i.Id == changed.Entity.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(i => i.Title, changed.Title));
-        };
-        return vm;
-    }
-    private void RefreshProperties()
-    {
-        if (_refreshQueued)
-            return;
-        _refreshQueued = true;
-        Dispatcher.UIThread.Post(() =>
-        {
-            _refreshQueued = false;
-            OnPropertyChanged(nameof(Summary));
-            OnPropertyChanged(nameof(Progress));
-            OnPropertyChanged(nameof(LeafCount));
-            UpdateVisibleItems();
-        });
-    }
-}
-public enum ItemFilter
-{
-    All,
-    Active,
-    Done
+    /// <summary>The current page's entry is disabled, which is also how the panel shows where you are.</summary>
+    private bool CanNavigate(Type? pageType) => pageType is not null && pageType != CurrentPage?.GetType();
 }

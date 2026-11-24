@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CyberList.Data;
+using CyberList.Helpers;
 using CyberList.Interfaces;
 using CyberList.Services;
 
@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>For the header's "DATE / 2026.11.19" strip.</summary>
     public string Today => DateTime.Now.ToString("yyyy.MM.dd");
-    public string DbName => Path.GetFileName(DbPaths.DefaultConnectionString).ToUpper();
+    public string DbName => Path.GetFileName(ConfigurationHelper.DefaultDatabasePath).ToUpper();
 
     public IReadOnlyList<PageTab> PageTabs => (CurrentPage as IHasTabs)?.Tabs ?? Array.Empty<PageTab>();
 

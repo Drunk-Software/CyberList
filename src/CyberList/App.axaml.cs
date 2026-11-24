@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CyberList.Data;
+using CyberList.Helpers;
 using CyberList.Interfaces;
 using CyberList.Services;
 using CyberList.ViewModels;
@@ -33,6 +34,10 @@ public partial class App : Application
             {
                 DataContext = Services.GetRequiredService<MainWindowViewModel>(),
             };
+
+            // The saved DB location is missing: open Settings, where the warning offers a way out.
+            if (Services.GetRequiredService<IDatabaseService>().StartupWarning is not null)
+                Services.GetRequiredService<INavigationService>().NavigateTo<SettingsPageViewModel>();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -42,7 +47,18 @@ public partial class App : Application
     {
         var services = new ServiceCollection();
 
-        services.AddDbContextFactory<AppDbContext>(o => o.UseSqlite(DbPaths.DefaultConnectionString));
+        // Created on first use, which is the DB migration below: settings load before the DB opens.
+        services.AddSingleton<ISettingsService>(
+            _ => new JsonSettingsService(ConfigurationHelper.SettingsFilePath));
+
+        // One instance behind both interfaces: it decides the DB path and creates the contexts.
+        services.AddSingleton(sp => new DatabaseService(
+            sp.GetRequiredService<ISettingsService>(),
+            ConfigurationHelper.DefaultDatabasePath,
+            ConfigurationHelper.BackupsFolder));
+        services.AddSingleton<IDatabaseService>(sp => sp.GetRequiredService<DatabaseService>());
+        services.AddSingleton<IDbContextFactory<AppDbContext>>(sp => sp.GetRequiredService<DatabaseService>());
+        services.AddSingleton<IFileDialogService, AvaloniaFileDialogService>();
 
         // Pages: one line each. The order here is the order in the header's navigation panel.
         services.AddPage<ListPageViewModel>("TASK GRID");

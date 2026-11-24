@@ -13,9 +13,13 @@ public partial class ListPageViewModel : ViewModelBase, IHasTabs
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     public IReadOnlyList<PageTab> Tabs { get; }
-    public ListPageViewModel(IDbContextFactory<AppDbContext> dbFactory)
+    /// <param name="database">Optional so tests can skip it; when given, the list reloads whenever
+    /// the database is moved, swapped or imported.</param>
+    public ListPageViewModel(IDbContextFactory<AppDbContext> dbFactory, IDatabaseService? database = null)
     {
         _dbFactory = dbFactory;
+        if (database is not null)
+            database.DatabaseChanged += () => _ = LoadAsync();
         Tabs =
         [
             new PageTab("01 ALL",    () => Filter = ItemFilter.All),

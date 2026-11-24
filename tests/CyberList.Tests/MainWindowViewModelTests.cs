@@ -21,6 +21,8 @@ public sealed class MainWindowViewModelTests : IDisposable
     {
         var services = new ServiceCollection();
         services.AddSingleton<IDbContextFactory<AppDbContext>>(_db);
+        services.AddSingleton<IDatabaseService, FakeDatabaseService>();
+        services.AddSingleton<IFileDialogService, FakeFileDialogService>();
         services.AddPage<ListPageViewModel>("TASK GRID");
         services.AddPage<SettingsPageViewModel>("SETTINGS");
         services.AddSingleton<INavigationService, NavigationService>();
